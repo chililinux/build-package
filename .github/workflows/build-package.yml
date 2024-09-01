@@ -1,0 +1,387 @@
+# Name of the workflow
+name: Build Package
+
+# Define when the workflow will run
+on:
+  # Triggered by repository_dispatch event
+  repository_dispatch:
+    types: ["*"]
+
+  # Allows manual triggering of the workflow
+  workflow_dispatch:
+    inputs:
+      branch_type:
+        description: "Branch type (testing or stable)"
+        required: true
+        type: choice
+        options:
+          - testing
+          - stable
+      new_branch:
+        description: "Nome do novo branch"
+        required: true
+        type: string
+      debug_enabled:
+        type: boolean
+        description: "With TMATE"
+        required: false
+        default: true
+
+# Environment variables used throughout the workflow
+env:
+  gpg_key: ${{ secrets.GPG_PRIVATE_KEY }}
+  gpg_passphrase: ${{ secrets.PASSPHRASE }}
+  BRANCH_TYPE: ${{ github.event.client_payload.type || github.event.inputs.branch_type }}
+  NEW_BRANCH: ${{ github.event.client_payload.branch || github.event.inputs.new_branch }}
+  PACKAGE_NAME: ${{ github.event.action }}
+
+# Define the jobs to be run
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    container:
+      image: talesam/community-build:1.1
+      options: --privileged
+    steps:
+      # Check out the repository
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      # Initialize SSH agent and add private key
+      - name: Setup SSH Agent
+        env:
+          SSH_AUTH_SOCK: /tmp/ssh_agent.sock
+        run: |
+          ssh-agent -a $SSH_AUTH_SOCK > /dev/null
+          ssh-add - <<< "${{ secrets.PKGBUILD_KEY }}"
+          echo "SSH_AUTH_SOCK=/tmp/ssh_agent.sock" >> $GITHUB_ENV
+
+      # Add the repository directory as safe
+      - name: Add safe directory
+        run: git config --global --add safe.directory /__w/build-package/build-package
+
+      - name: Fetch all branches
+        run: |
+          git fetch --all
+          git fetch origin '+refs/heads/*:refs/remotes/origin/*'
+
+      # Checkout to specified branch or create if not exists
+      - name: Checkout to specified branch or create if not exists
+        run: |
+          if git ls-remote --exit-code --heads origin ${{ env.NEW_BRANCH }}; then
+            git checkout ${{ env.NEW_BRANCH }}
+          else
+            git checkout -b ${{ env.NEW_BRANCH }}
+          fi
+
+      # Set environment variables
+      - name: Set ENVs
+        shell: bash
+        run: |
+          # Set URL and git branch
+          if [ -n "${{ github.event.client_payload.url }}" ]; then
+            echo "url=${{ github.event.client_payload.url }}" >> $GITHUB_ENV
+          fi
+          if [ -n "${{ github.event.client_payload.branch }}" ]; then
+            echo "git_branch=${{ github.event.client_payload.branch }}" >> $GITHUB_ENV
+          fi
+
+          # Set Manjaro branch, default to stable if not specified
+          if [ -z "${{ github.event.client_payload.manjaro_branch }}" ]; then
+            echo "manjaro_branch=stable" >> $GITHUB_ENV
+          else
+            echo "manjaro_branch=${{ github.event.client_payload.manjaro_branch }}" >> $GITHUB_ENV
+          fi
+
+          # Set Community branch, default to testing if not specified
+          if [ -z "${{ github.event.client_payload.community_branch }}" ]; then
+            echo "community_branch=testing" >> $GITHUB_ENV
+          else
+            echo "community_branch=${{ github.event.client_payload.community_branch }}" >> $GITHUB_ENV
+          fi
+
+      # Echo the set environment variables
+      - name: echo PayLoads
+        shell: bash
+        run: |
+          echo "url: $url"
+          echo "git_branch: $git_branch"
+          echo "manjaro_branch: $manjaro_branch"
+
+      # Setup tmate session for debugging if enabled
+      - name: Setup tmate session
+        uses: mxschmitt/action-tmate@v3
+        if: ${{ github.event_name == 'workflow_dispatch' && inputs.debug_enabled }}
+        with:
+          install-dependencies: false
+
+      # Make changes to the system configuration
+      - name: Changes in System
+        shell: bash
+        run: |
+          # Set up pacman mirror and repositories
+          echo 'Server = https://nnenix.mm.fcix.net/manjaro/stable/$repo/$arch' | tee /etc/pacman.d/mirrorlist
+          sed -i '/biglinux/,$d' /etc/pacman.conf
+          echo '
+          [community-testing]
+          SigLevel = PackageRequired
+          Server = https://repo.communitybig.org/testing/$arch
+
+          [community-stable]
+          SigLevel = PackageRequired
+          Server = https://repo.communitybig.org/stable/$arch
+
+          [biglinux-testing]
+          SigLevel = PackageRequired
+          Server = https://repo.biglinux.com.br/testing/$arch
+
+          [biglinux-stable]
+          SigLevel = PackageRequired
+          Server = https://repo.biglinux.com.br/stable/$arch' | tee -a /etc/pacman.conf /etc/chrootbuild/pacman.conf.x86_64
+
+          # Configure makepkg
+          sed -i '/PACKAGER=/s/.*/\PACKAGER="Big Community Package Build <bigbruno@gmail.com>\"/' /etc/makepkg.conf
+          sed -i '/MAKEFLAGS=/s/.*/MAKEFLAGS="-j'$(nproc)'"/' /etc/makepkg.conf
+
+          # Modify manjaro-chrootbuild
+          sed -i 's|https://repo.manjaro.org/repo|https://nnenix.mm.fcix.net/manjaro|' /usr/lib/manjaro-chrootbuild/util.sh
+          sed -i '/-Syy/s/-Syy/-Syy git /' /usr/lib/manjaro-chrootbuild/util-chroot.sh
+
+      # Download the source code
+      - name: Download Source
+        shell: bash
+        run: |
+          git clone $url.git
+
+      # Build the package
+      - name: Build
+        shell: bash
+        run: |
+          # Create build user
+          useradd builduser -m
+          passwd -d builduser
+          printf 'builduser ALL=(ALL) ALL\n' | tee -a /etc/sudoers
+
+          # Find and enter the directory containing PKGBUILD
+          gitfolder=$(find -type f -name PKGBUILD | sed 's/PKGBUILD//')
+          cd $gitfolder
+
+          # Set architecture
+          pkgArch=$(grep -E "\barch=" PKGBUILD | cut -d "=" -f2 | tr -cd '[:alnum:]_' | head -n1)
+          if [ "$pkgArch" = "any" ]; then
+            sed -i "/\barch=/s/arch=.*/arch=('x86_64' 'aarch64')/" PKGBUILD
+          fi
+
+          # Build for x86_64
+          if [ -n "$(sed -n '/\barch=/p' PKGBUILD | grep x86_64)" ]; then
+            echo -e "\033[01;31mBuild x86_64\033[0m"
+            sudo -u builduser bash -c "sudo chrootbuild -H -p . -b ${{ env.BRANCH_TYPE }}"
+          fi
+
+      # Rename the package if necessary
+      - name: Rename Package
+        shell: bash -O extglob {0}
+        run: |
+          gitfolder=$(find -type f -name PKGBUILD | sed 's/PKGBUILD//')
+          cd $gitfolder
+          for i in *.zst; do
+            if [ -n "$(ls $i | grep :)" ]; then
+              mv $i $(echo $i | sed 's/:/-/')
+            fi
+          done
+
+      # Sign the package
+      - name: Sign Package
+        shell: bash -O extglob {0}
+        run: |
+          cat <(echo -e "$gpg_key") | gpg --batch --import &>/dev/null
+          gitfolder=$(find -type f -name PKGBUILD | sed 's/PKGBUILD//')
+          cd $gitfolder
+          for p in $(find $PWD -maxdepth 1 -regex '.*\.pkg\.tar\.\(xz\|zst\)'); do
+            gpg --pinentry-mode loopback --passphrase "$gpg_passphrase" --detach-sign ${p}
+          done
+
+      # Generate checksums for the package
+      - name: CheckSum
+        shell: bash -O extglob {0}
+        run: |
+          gitfolder=$(find -type f -name PKGBUILD | sed 's/PKGBUILD//')
+          cd $gitfolder
+          echo '#!/bin/bash
+          for i in $(ls *.zst); do md5sum $i >> $i.md5; done
+          for i in $(ls *.sig | sed 's/.sig//'); do md5sum $i.sig >> $i.md5; done
+          exit 0' > md5.sh
+          bash md5.sh
+          rm md5.sh
+
+      # Publish the package on GitHub
+      - name: Publish Package on GitHub
+        shell: bash
+        run: |
+          gitfolder=$(find -type f -name PKGBUILD | sed 's/PKGBUILD//')
+          cd $gitfolder
+          ls -lh
+
+          # Skip linux-zen packages
+          if [ -n "$(grep linux-zen <<< $gitfolder)" ];then
+            exit 0
+          fi
+
+          # Determine the last committer
+          lastCommit=$(git log -1 --format="%an <%ae>")
+          if [ "$(grep github-actions <<< $lastCommit)" ];then
+            lastCommit=$(git log -2 --format="%an <%ae>")
+          fi
+
+          # Set up GitHub authentication and determine the repository
+          if [ -n "$(grep -i communitybig <<< $url)" ];then
+            echo ${{ secrets.TOKEN_RELEASE }} | gh auth login --with-token
+            repo=$(sed 's|https://github.com/||' <<< $url)
+          else
+            echo ${{ github.token }} | gh auth login --with-token
+            repo=${{ github.repository }}
+          fi
+
+          # Create and upload the release
+          ls *.pkg* | head -n1 | sed 's/.pkg.*//' > release
+          release=$(cat release)
+
+          echo "release=$release"
+          echo "repo=$repo"
+          echo "url=$url"
+
+          gh release create ${release} --title ${release} --repo ${repo} --notes "automated release from $url" || echo "release already exists"
+          for i in .zst .sig .tar .md5; do
+            find -iname "*$i" -exec gh release upload ${release} --repo ${repo} --clobber {} \;
+          done
+
+      # Push the package to the repository
+      - name: Push to Repo
+        shell: bash
+        env:
+          LANG: en_US.UTF-8
+          LC_ALL: en_US.UTF-8
+        run: |
+          # Set up SSH
+          ssh-keyscan -t rsa -p ${{ secrets.PKGBUILD_PORT }} ${{ secrets.PKGBUILD_HOST }} >> /root/.ssh/known_hosts
+          ip=${{ secrets.PKGBUILD_HOST }}
+
+          # Find the PKGBUILD directory
+          gitfolder=$(find -type f -name PKGBUILD | sed 's/PKGBUILD//')
+          cd $gitfolder
+          ls -lh
+
+          # Determine the last committer
+          lastCommit=$(git log -1 --format="%an <%ae>")
+          if [ "$(grep github-actions <<< $lastCommit)" ];then
+            lastCommit=$(git log -2 --format="%an <%ae>")
+          fi
+
+          # Set the branch based on BRANCH_TYPE
+          if [ "${{ env.BRANCH_TYPE }}" == "stable" ]; then
+            branch="STABLE"
+          else
+            branch="TESTING"
+          fi
+
+          # Function to send Telegram message
+          send_telegram_message() {
+            message="$1"
+            curl -s -X POST "https://api.telegram.org/bot${{ secrets.TOKEN_BOT }}/sendMessage" \
+              -d chat_id="${{ secrets.CHAT_ID }}" \
+              -d text="$message"\
+              -d parse_mode="MarkdownV2"
+          }
+
+          # Upload the package files
+          for i in *.zst; do
+            pkgname=$(basename $i)
+            
+            pkgname_escaped=$(echo "$pkgname" | sed 's/[_*[\]()~`>#+\-=|{}.!]/\\&/g')
+            branch_escaped=$(echo "$branch" | sed 's/[_*[\]()~`>#+\-=|{}.!]/\\&/g')
+            
+            echo "📦 Pacote $pkgname sendo enviado para o repositório 🚀 $branch 🎯"
+            send_telegram_message "📦 **Pacote** \`$pkgname_escaped\` **sendo enviado para o repositório** 🚀 \`$branch_escaped\`🎯"
+            rsync -vapz -e "ssh -p ${{ secrets.PKGBUILD_PORT }}" $i ${{ secrets.PKGBUILD_USER }}@$ip:${{ secrets.PKGBUILD_DIR }}/${branch,,}/x86_64/
+            if [ $? -eq 0 ]; then
+              send_telegram_message "✅ **Pacote** \`$pkgname_escaped\` **enviado com sucesso para o repositório** \`$branch_escaped\`"
+            else
+              send_telegram_message "❌ **Falha ao enviar o pacote** \`$pkgname_escaped\` **para o repositório** \`$branch_escaped\`"
+            fi
+          done
+          for i in *.sig *.md5; do
+            rsync -vapz -e "ssh -p ${{ secrets.PKGBUILD_PORT }}" $i ${{ secrets.PKGBUILD_USER }}@$ip:${{ secrets.PKGBUILD_DIR }}/${branch,,}/x86_64/
+          done
+
+      # Runs only if previous steps were successful
+      - name: Update Repository Database
+        if: success() # Runs only if the previous steps were successful
+        shell: bash
+        run: |
+          # Function to send Telegram message
+          send_telegram_message() {
+            message="$1"
+            curl -s -X POST "https://api.telegram.org/bot${{ secrets.TOKEN_BOT }}/sendMessage" \
+              -d chat_id="${{ secrets.CHAT_ID }}" \
+              -d text="$message" \
+              -d parse_mode="MarkdownV2"
+          }
+
+          # Determine the database name based on the branch type
+          if [ "$BRANCH_TYPE" == "testing" ]; then
+            branch="TESTING"
+            db_name="community-testing"
+          elif [ "$BRANCH_TYPE" == "stable" ]; then
+            branch="STABLE"
+            db_name="community-stable"
+          else
+            echo "Error: Unknown branch type: $BRANCH_TYPE"
+            exit 1
+          fi
+
+          echo "Branch: $branch"
+          echo "Database name: $db_name"
+
+          branch_escaped=$(echo "$branch" | sed 's/[_*[\]()~`>#+\-=|{}.!]/\\&/g')
+          db_name_escaped=$(echo "$db_name" | sed 's/[_*[\]()~`>#+\-=|{}.!]/\\&/g')
+
+          echo "🔄 Sincronizando o banco de dados do repositório $branch..."
+          send_telegram_message "🔄 **Iniciando sincronização do banco de dados do repositório** \`$branch_escaped\`"
+
+          ssh -v ${{ secrets.PKGBUILD_USER }}@${{ secrets.PKGBUILD_HOST }} -p ${{ secrets.PKGBUILD_PORT }} << EOF
+            set -x
+            cd ${{ secrets.PKGBUILD_DIR }}/${branch,,}/x86_64
+            repo-add -n -R $db_name.db.tar.gz *.pkg.tar.zst
+            exit_code=\$?
+            echo "Comando repo-add concluído com código de saída: \$exit_code"
+            exit \$exit_code
+          EOF
+
+          if [ $? -eq 0 ]; then
+            echo "✅ Sincronização do banco de dados concluída com sucesso!"
+            send_telegram_message "✅ **Sincronização do banco de dados do repositório** \`$branch_escaped\` **concluída com sucesso\!**"
+          else
+            echo "❌ Falha na sincronização do banco de dados."
+            send_telegram_message "❌ **Falha na sincronização do banco de dados do repositório** \`$branch_escaped\`\."
+          fi
+
+      # Keeps only the most recent package
+      - name: Clean Old Packages
+        if: success()
+        shell: bash
+        run: |
+          ssh ${{ secrets.PKGBUILD_USER }}@${{ secrets.PKGBUILD_HOST }} -p ${{ secrets.PKGBUILD_PORT }} << EOF
+            set -x
+            cd ${{ secrets.PKGBUILD_DIR }}/${branch,,}/x86_64
+            paccache -rk1
+            echo "Comando paccache concluído com código de saída: \$?"
+          EOF
+
+      # Send a Telegram alert if the build fails
+      - name: Telegram Alert Fail
+        if: ${{ failure() }}
+        run: |
+          curl -s -X POST "https://api.telegram.org/bot${{ secrets.TOKEN_BOT }}/sendMessage" \
+            -d chat_id="${{ secrets.CHAT_ID }}" \
+            -d text="🚨 FALHA ao criar Pacote Community: ${{ github.event.action }} a partir do branch ${{ github.ref_name }}, link do erro: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }} 🖥"

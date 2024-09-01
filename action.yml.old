@@ -1,0 +1,178 @@
+name: 'Community Package Action'
+description: 'Builds Manjaro Packages'
+
+# Input parameters for the action
+inputs:
+  source:
+    description: 'custom package repo source'
+    required: false
+  manjaro_branch:
+    description: 'Manjaro branch to build'
+    default: stable
+    required: false
+  custom-repo:
+    description: 'custom repo'
+    required: false
+  multilib:
+    description: 'build multilib package'
+    required: false
+    default: false
+  repo:
+    description: 'package repo'
+    required: true
+  gpg-key:
+    description: 'gpg signing key'
+    required: true
+  gpg-passphrase:
+    description: 'gpg passphrase'
+    required: true
+  git_branch:
+    description: 'extra repository to build package'
+    required: false
+  extracommand:
+    description: 'extra command to build package'
+    required: false
+  extrapackage:
+    description: 'extra package to build'
+    required: false
+  tmate:
+    description: 'run tmate'
+    required: false
+  repo-mirror:
+    description: 'mirror to use in build'
+    default: repo
+    required: false
+  repo-dev:
+    description: 'development repository'
+    required: false
+  build_env:
+    description: 'Build environment (testing or stable)'
+    required: true
+    default: 'testing'
+
+# Define the steps of the action
+runs:
+  using: "composite"
+  steps:
+    # Check image version
+    - name: Check image version
+      shell: bash
+      run: |
+        echo "Community Build Image Version:"
+        cat /etc/community-build-version || echo "Version: 1.2"
+
+    # Install additional build dependencies if needed
+    - name: install additional build-dependencies
+      shell: bash
+      run: |
+        sudo pacman -Syu --noconfirm
+        sudo pacman -S --needed --noconfirm \
+          base-devel \
+          cmake \
+          fakeroot \
+          jq \
+          libarchive \
+          libcurl \
+          libgpgme \
+          openssl \
+          zip \
+          python-pip
+        sudo pip3 install meson ninja
+  
+    # Configure repositories based on build environment
+    - name: Configure repositories
+      shell: bash
+      run: |
+        if [ "${{ inputs.build_env }}" == "testing" ]; then
+          echo '
+          [community-testing]
+          SigLevel = PackageRequired
+          Server = https://repo.communitybig.org/testing/$arch
+
+          [biglinux-testing]
+          SigLevel = PackageRequired
+          Server = https://repo.biglinux.com.br/testing/$arch' | sudo tee -a /etc/pacman.conf /etc/chrootbuild/pacman.conf.x86_64
+        elif [ "${{ inputs.build_env }}" == "stable" ]; then
+          echo '
+          [community-stable]
+          SigLevel = PackageRequired
+          Server = https://repo.communitybig.org/stable/$arch
+
+          [biglinux-stable]
+          SigLevel = PackageRequired
+          Server = https://repo.biglinux.com.br/stable/$arch' | sudo tee -a /etc/pacman.conf /etc/chrootbuild/pacman.conf.x86_64
+        else
+          echo "Invalid build environment specified"
+          exit 1
+        fi
+
+        # Update PACKAGER
+        echo 'PACKAGER="Community Package Build <talesam@gmail.com>"' | sudo tee -a /etc/makepkg.conf > /dev/null
+
+    # Setup TMATE Session if needed
+    - name: Setup TMATE Session
+      uses: mxschmitt/action-tmate@v3
+      if: "${{ inputs.tmate == 'true' }}"
+
+    # Download source code
+    - name: Download Source
+      if: "${{ inputs.tmate == '' }}"
+      shell: bash
+      run: |
+        git clone ${{ github.event.client_payload.url }}.git
+
+    # Build the package
+    - name: build package
+      shell: bash
+      if: "${{ inputs.tmate == '' }}"
+      run: |
+        gitfolder=$(find -type f -name PKGBUILD | sed 's/PKGBUILD//')
+        cd $gitfolder
+        
+        if [ -n "$(echo ${{ github.event.client_payload.url }} | grep -E 'https://github.com/(biglinux|communitybig)/')" ]; then
+          git checkout ${{ inputs.git_branch }}
+          sed -i '/source=/s/\.git"/\.git#branch=${{ inputs.git_branch }}"/' PKGBUILD
+        fi
+        
+        ${{ github.event.client_payload.command }}
+        ${{ inputs.extracommand }}
+        
+        echo "branch_build=${{ inputs.build_env }}"
+        
+        build_opt=("-H" "-p ." "-b ${{ inputs.build_env }}" )
+        [[ ! -z "${{ inputs.custom-repo }}" ]] && build_opt+=("-k ${{ inputs.custom-repo }}")
+        [[ "${{ inputs.multilib }}" == "true" ]] && build_opt+=("-m")
+        
+        echo "cmd=chrootbuild ${build_opt[@]}"
+        sudo chrootbuild ${build_opt[@]}
+
+    # Rename the package if necessary
+    - name: Rename Package
+      shell: bash -O extglob {0}
+      run: |
+        gitfolder=$(find -type f -name PKGBUILD | sed 's/PKGBUILD//')
+        cd $gitfolder
+        for i in *.zst; do if [ -n "$(ls $i | grep :)" ]; then mv $i $(echo $i | sed 's/:/-/'); fi; done
+
+    # Sign the package
+    - name: sign package
+      shell: bash -O extglob {0}
+      run: |
+        cat <(echo -e "${{ inputs.gpg-key }}") | gpg --batch --import &>/dev/null
+        gitfolder=$(find -type f -name PKGBUILD | sed 's/PKGBUILD//')
+        cd $gitfolder
+        for p in $(find $PWD -maxdepth 1 -regex '.*\.pkg\.tar\.\(xz\|zst\)'); do
+          gpg --pinentry-mode loopback --passphrase "${{ inputs.gpg-passphrase }}" --detach-sign ${p}
+        done
+
+    # Generate checksums for the package
+    - name: CheckSum
+      shell: bash -O extglob {0}
+      run: |
+        gitfolder=$(find -type f -name PKGBUILD | sed 's/PKGBUILD//')
+        cd $gitfolder
+        echo '#!/bin/bash
+        for i in $(ls *.zst); do md5sum $i >> $i.md5; done
+        for i in $(ls *.sig | sed 's/.sig//'); do md5sum $i.sig >> $i.md5; done
+        exit 0' > md5.sh
+        bash md5.sh
