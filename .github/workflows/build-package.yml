@@ -1,16 +1,19 @@
-name: Build Package
+name: 📦 Build Package
 
 on:
   repository_dispatch:
-    types: ["*"]
+    types:
+      - "*"
+      - "!aur-*"
   workflow_dispatch:
     inputs:
       branch_type:
-        description: "Branch type (testing or stable)"
+        description: "Branch type (testing, extra or stable)"
         required: true
         type: choice
         options:
           - testing
+          - extra
           - stable
       new_branch:
         description: "Nome do novo branch"
