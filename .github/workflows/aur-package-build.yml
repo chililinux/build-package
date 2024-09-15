@@ -1,4 +1,4 @@
-name: AUR Package Build
+name: 🧰 AUR Package Build
 
 on:
   repository_dispatch:
