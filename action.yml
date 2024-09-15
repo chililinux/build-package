@@ -52,7 +52,8 @@ inputs:
   pacman_mirror:
     description: "Pacman mirror URL"
     required: false
-    default: "https://nnenix.mm.fcix.net/manjaro/stable/$repo/$arch"
+    #default: "https://nnenix.mm.fcix.net/manjaro/stable/$repo/$arch"
+    default: "https://manjaro.c3sl.ufpr.br/stable/$repo/$arch"
   publish_github:
     description: "Publish package on GitHub"
     required: false
