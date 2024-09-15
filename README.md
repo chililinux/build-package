@@ -1,3 +1,2 @@
 # build-package
-
-Package Generator for ChiliLinux
+Package Generator
