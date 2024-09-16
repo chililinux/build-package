@@ -1,46 +1,43 @@
-name: 📦 Build Package
+name: Build Package
 
 on:
   repository_dispatch:
-    types: 
-      - '*'
-      - '!aur-*'
+    types: ["*"]
   workflow_dispatch:
     inputs:
       branch_type:
-        description: 'Branch type (testing, extra or stable)'
+        description: "Branch type (testing or stable)"
         required: true
         type: choice
         options:
           - testing
-          - extra
           - stable
       new_branch:
-        description: 'Nome do novo branch'
+        description: "Nome do novo branch"
         required: true
         type: string
       debug_enabled:
         type: boolean
-        description: 'With TMATE'
+        description: "With TMATE"
         required: false
         default: true
       publish_github:
-        description: 'Publish package on GitHub'
+        description: "Publish package on GitHub"
         type: boolean
         required: false
         default: true
       push_to_repo:
-        description: 'Push package to repository'
+        description: "Push package to repository"
         type: boolean
         required: false
         default: true
       update_db:
-        description: 'Update repository database'
+        description: "Update repository database"
         type: boolean
         required: false
         default: true
       extra_command:
-        description: 'Extra command to run before building'
+        description: "Extra command to run before building"
         required: false
         type: string
 
@@ -59,7 +56,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
-      
+
       - name: Setup SSH Agent
         env:
           SSH_AUTH_SOCK: /tmp/ssh_agent.sock
@@ -67,11 +64,11 @@ jobs:
           ssh-agent -a $SSH_AUTH_SOCK > /dev/null
           ssh-add - <<< "${{ secrets.PKGBUILD_KEY }}"
           echo "SSH_AUTH_SOCK=/tmp/ssh_agent.sock" >> $GITHUB_ENV
-      
+
           # Add the repository directory as safe
       - name: Add safe directory
         run: git config --global --add safe.directory /__w/build-package/build-package
-  
+
       # Set environment variables
       - name: Set ENVs
         shell: bash
@@ -83,26 +80,26 @@ jobs:
           if [ -n "${{ github.event.client_payload.branch }}" ]; then
             echo "git_branch=${{ github.event.client_payload.branch }}" >> $GITHUB_ENV
           fi
-          
+
           # Set Manjaro branch, default to stable if not specified
           if [ -z "${{ github.event.client_payload.manjaro_branch }}" ]; then
             echo "manjaro_branch=stable" >> $GITHUB_ENV
           else
             echo "manjaro_branch=${{ github.event.client_payload.manjaro_branch }}" >> $GITHUB_ENV
           fi
-          
+
           # Set Community branch, default to testing if not specified
           if [ -z "${{ github.event.client_payload.community_branch }}" ]; then
             echo "community_branch=testing" >> $GITHUB_ENV
           else
             echo "community_branch=${{ github.event.client_payload.community_branch }}" >> $GITHUB_ENV
           fi
-      
+
       - name: Fetch all branches
         run: |
           git fetch --all
           git fetch origin '+refs/heads/*:refs/remotes/origin/*'
-      
+
       - name: Checkout to specified branch or create if not exists
         run: |
           if git ls-remote --exit-code --heads origin ${{ env.NEW_BRANCH }}; then
@@ -110,14 +107,14 @@ jobs:
           else
             git checkout -b ${{ env.NEW_BRANCH }}
           fi
-      
+
       - name: echo PayLoads
         shell: bash
         run: |
           echo "url: $url"
           echo "git_branch: $git_branch"
           echo "manjaro_branch: $manjaro_branch"
-      
+
       - name: Setup tmate session
         uses: mxschmitt/action-tmate@v3
         if: ${{ github.event_name == 'workflow_dispatch' && inputs.debug_enabled }}
@@ -139,24 +136,24 @@ jobs:
 
           # Parâmetros relacionados ao debug e tmate
           tmate: ${{ github.event.inputs.debug_enabled || 'false' }}
-          
+
           # Tokens e chaves de segurança
           github_token: ${{ secrets.GITHUB_TOKEN }}
           gpg_key: ${{ secrets.GPG_PRIVATE_KEY }}
           gpg_passphrase: ${{ secrets.PASSPHRASE }}
           telegram_token: ${{ secrets.TOKEN_BOT }}
           telegram_chat_id: ${{ secrets.CHAT_ID }}
-          
+
           # Parâmetros relacionados ao repositório
           repo_host: ${{ secrets.PKGBUILD_HOST }}
           repo_user: ${{ secrets.PKGBUILD_USER }}
           repo_port: ${{ secrets.PKGBUILD_PORT }}
           repo_dir: ${{ secrets.PKGBUILD_DIR }}
-          
+
           # Opções de publicação e atualização
           publish_github: ${{ github.event.inputs.publish_github || 'true' }}
           push_to_repo: ${{ github.event.inputs.push_to_repo || 'true' }}
           update_db: ${{ github.event.inputs.update_db || 'true' }}
-          
+
           # Outros parâmetros específicos
           extra_command: ${{ github.event.inputs.extra_command }}
