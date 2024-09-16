@@ -122,8 +122,7 @@ runs:
       shell: bash
       run: |
         # Atualiza o sistema e instala as dependências necessárias
-        sudo pacman -Syu --noconfirm
-        sudo pacman -S --needed --noconfirm \
+        sudo pacman -Syu --quiet --needed --noconfirm \
           base-devel \
           cmake \
           fakeroot \
@@ -150,9 +149,12 @@ runs:
           echo "Usando mirror especificado: ${{ inputs.pacman_mirror }}"
           echo "Server = ${{ inputs.pacman_mirror }}" | sudo tee /etc/pacman.d/mirrorlist
         else
-          echo "Gerando mirrorlist usando pacman-mirrors"
-          sudo pacman-mirrors --geoip
+          echo "Gerando mirrorlist usando pacman-mirrors e excluindo mirrors problemáticos"
+          sudo pacman-mirrors --geoip --api --protocols https --country all
+          sudo sed -i '/nnenix\.mm\.fcix\.net/d' /etc/pacman.d/mirrorlist
         fi
+        echo "Sincronizando bancos de dados do pacman..."
+        sudo pacman -Syy
         echo "Mirrorlist final:"
         cat /etc/pacman.d/mirrorlist
   
