@@ -19,7 +19,7 @@ on:
         description: "Nome do novo branch"
         required: true
         type: string
-      debug_enabled:
+      tmate:
         type: boolean
         description: "With TMATE"
         required: false
@@ -121,9 +121,10 @@ jobs:
 
       - name: Setup tmate session
         uses: mxschmitt/action-tmate@v3
-        if: ${{ github.event_name == 'workflow_dispatch' && inputs.debug_enabled }}
+        if: ${{ github.event.client_payload.tmate == true || inputs.tmate == true}}
         with:
           install-dependencies: false
+          detached: true
 
       - name: Build and Publish Package
         uses: ./
