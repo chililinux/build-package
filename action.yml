@@ -125,18 +125,19 @@ runs:
         meson --version
         ninja --version
 
+    - name: Setup TMATE Session
+      uses: mxschmitt/action-tmate@v3
+      if: ${{ github.event.client_payload.tmate == true || inputs.tmate == true}}
+      with:
+        install-dependencies: false
+        detached: true
+
     - name: Configure System and Repositories
       shell: bash
       run: |
-        echo "Build environment: ${{ inputs.build_env }}"
-        echo "Build environment from env: $DEBUG_BUILD_ENV"
-        echo "All inputs:"
-        echo "${{ toJson(inputs) }}"
-        echo "DEBUG: BRANCH_TYPE: $BRANCH_TYPE"
-
         # Set up pacman mirror
-          echo "Usando mirror especificado: ${{ inputs.pacman_mirror }}"
-          echo 'Server = ${{ inputs.pacman_mirror }}' | sudo tee /etc/pacman.d/mirrorlist
+        echo "Usando mirror especificado: ${{ inputs.pacman_mirror }}"
+        echo 'Server = ${{ inputs.pacman_mirror }}' | sudo tee /etc/pacman.d/mirrorlist
 
         # Remove existing BigLinux repositories
         sudo sed -i '/biglinux/,$d' /etc/pacman.conf
@@ -147,11 +148,11 @@ runs:
           [community-testing]
           SigLevel = PackageRequired
           Server = https://repo.communitybig.org/testing/$arch
-          
+
           [biglinux-testing]
           SigLevel = PackageRequired
           Server = https://repo.biglinux.com.br/testing/$arch
-          
+
           [biglinux-stable]
           SigLevel = PackageRequired
           Server = https://repo.biglinux.com.br/stable/$arch' | sudo tee -a /etc/pacman.conf /etc/chrootbuild/pacman.conf.x86_64
@@ -165,7 +166,7 @@ runs:
           [community-stable]
           SigLevel = PackageRequired
           Server = https://repo.communitybig.org/stable/$arch
-          
+
           [biglinux-stable]
           SigLevel = PackageRequired
           Server = https://repo.biglinux.com.br/stable/$arch' | sudo tee -a /etc/pacman.conf /etc/chrootbuild/pacman.conf.x86_64
@@ -175,13 +176,13 @@ runs:
           sudo sed -i 's/^#MAKEFLAGS="-j2"/MAKEFLAGS="-j$(nproc)"/' /etc/makepkg.conf
           sudo sed -i 's/^#BUILDDIR/BUILDDIR/' /etc/makepkg.conf
           sudo sed -i 's/^#PKGDEST/PKGDEST/' /etc/makepkg.conf
-          
+
           # Habilitar o repositório multilib (necessário para alguns pacotes AUR)
           sudo sed -i '/\[multilib\]/,/Include/s/^#//' /etc/pacman.conf
-          
+
           # Atualizar os repositórios após as mudanças
           sudo pacman -Sy
-          
+
           # Instalar dependências comumente necessárias para builds AUR
           sudo pacman -S --needed base-devel git --noconfirm
         else
@@ -230,13 +231,6 @@ runs:
         echo "Current directory: $(pwd)"
         echo "Directory contents:"
         ls -la
-
-    - name: Setup TMATE Session
-      uses: mxschmitt/action-tmate@v3
-      if: ${{ github.event.client_payload.tmate == true || inputs.tmate == true}}
-      with:
-        install-dependencies: false
-        detached: true
 
     # Constrói o pacote
     - name: Build package
