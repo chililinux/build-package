@@ -109,7 +109,6 @@ runs:
     - name: Setup build environment
       shell: bash
       run: |
-        # Atualiza o sistema e instala as dependências necessárias
         sudo pacman -Syu --quiet --needed --noconfirm \
           base-devel \
           cmake \
@@ -119,15 +118,11 @@ runs:
           yay \
           tmate \
           duf \
-          tree
-
-        # Verifica as versões instaladas
-        meson --version
-        ninja --version
+          tree > /dev/null 2>&1
 
     - name: Setup TMATE Session
       uses: mxschmitt/action-tmate@v3
-      if: ${{ github.event.client_payload.tmate == true || inputs.tmate == true}}
+      #if: ${{ github.event.client_payload.tmate == true || inputs.tmate == true}}
       with:
         install-dependencies: false
         detached: true
@@ -291,10 +286,10 @@ runs:
           # Para pacotes não-AUR
           gitfolder=$(find -type f -name PKGBUILD | sed 's/PKGBUILD//')
           cd $gitfolder
-          
+
           # Ensure architecture is set to x86_64
           sed -i "/^arch=/c\arch=('x86_64')" PKGBUILD
-          
+
           # Build for x86_64
           echo -e "\033[01;31mBuild x86_64\033[0m"
           # Determinar o branch de build
@@ -304,7 +299,7 @@ runs:
           else
             build_branch="${{ inputs.branch_type }}"
           fi
-          
+
           # Executar chrootbuild com o branch determinado
           sudo chrootbuild -H -p . -b ${build_branch}
         fi
@@ -353,7 +348,7 @@ runs:
 
         # Lista os arquivos .sig gerados
         echo "Arquivos de assinatura gerados:"
-        ls -l *.sig || echo "Nenhum arquivo .sig encontrado"
+        ls -lah *.sig* || echo "Nenhum arquivo .sig encontrado"
 
     # Gera checksums para os pacotes
     - name: Generate checksums
@@ -466,13 +461,13 @@ runs:
           # Para pacotes não-AUR
           gitfolder=$(find -type f -name PKGBUILD | sed 's/PKGBUILD//')
           cd $gitfolder
-          
+
           # Determine the last committer (apenas para pacotes não-AUR)
           lastCommit=$(git log -1 --format="%an <%ae>")
           if [ "$(grep github-actions <<< $lastCommit)" ];then
             lastCommit=$(git log -2 --format="%an <%ae>")
           fi
-          
+
           # Set the branch based on BRANCH_TYPE
           if [ "${{ inputs.branch_type }}" == "stable" ]; then
             branch="STABLE"
@@ -497,10 +492,9 @@ runs:
         # Upload the package files
         for i in *.pkg.tar.zst; do
           pkgname=$(basename $i)
-          
           pkgname_escaped=$(echo "$pkgname" | sed 's/[_*[\]()~`>#+\-=|{}.!]/\\&/g')
           branch_escaped=$(echo "$branch" | sed 's/[_*[\]()~`>#+\-=|{}.!]/\\&/g')
-          
+
           echo "📦 Pacote $pkgname sendo enviado para o repositório 🚀 $branch 🎯"
           send_telegram_message "📦 **Pacote** \`$pkgname_escaped\` **sendo enviado para o repositório** 🚀 \`$branch_escaped\`🎯"
           rsync -vapz -e "ssh -p ${{ inputs.repo_port }}" $i ${{ inputs.repo_user }}@$ip:${{ inputs.repo_dir }}/${branch,,}/x86_64/
@@ -609,7 +603,7 @@ runs:
         ssh ${{ inputs.repo_user }}@${{ inputs.repo_host }} -p ${{ inputs.repo_port }} << EOF
           set -x
           cd ${{ inputs.repo_dir }}/${branch,,}/x86_64
-          
+
           # Manter apenas a versão mais recente de cada pacote
           for pkg in $(ls *.pkg.tar.zst | cut -d- -f1 | sort -u); do
             newest=\$(ls \${pkg}-*.pkg.tar.zst | sort -V | tail -n1)
@@ -635,7 +629,6 @@ runs:
               rm -f "\$file"
             fi
           done
-          
           exit_code=\$?
           echo "Limpeza concluída com código de saída: \$exit_code"
           exit \$exit_code
