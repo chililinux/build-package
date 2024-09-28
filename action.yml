@@ -1,106 +1,106 @@
-name: 'Community Package Build Action'
-description: 'Builds Manjaro/Community Packages'
+name: "Community Package Build Action"
+description: "Builds Manjaro/Community Packages"
 
 inputs:
   build_env:
-    description: 'Build environment (testing, extra, stable, or aur)'
+    description: "Build environment (testing, extra, stable, or aur)"
     required: true
-    default: 'testing'
+    default: "testing"
   source:
-    description: 'Custom package repo source'
+    description: "Custom package repo source"
     required: false
   manjaro_branch:
-    description: 'Manjaro branch to build'
+    description: "Manjaro branch to build"
     default: stable
     required: false
   custom_repo:
-    description: 'Custom repo'
+    description: "Custom repo"
     required: false
   multilib:
-    description: 'Build multilib package'
+    description: "Build multilib package"
     required: false
-    default: 'false'
+    default: "false"
   repo:
-    description: 'Package repo'
+    description: "Package repo"
     required: true
   gpg_key:
-    description: 'GPG signing key'
+    description: "GPG signing key"
     required: true
   gpg_passphrase:
-    description: 'GPG passphrase'
+    description: "GPG passphrase"
     required: true
   git_branch:
-    description: 'Extra repository to build package'
+    description: "Extra repository to build package"
     required: false
   extra_command:
-    description: 'Extra command to run before building'
+    description: "Extra command to run before building"
     required: false
   extra_package:
-    description: 'Extra package to build'
+    description: "Extra package to build"
     required: false
-    default: 'false'
+    default: "false"
   tmate:
-    description: 'Run tmate for debugging'
+    description: "Run tmate for debugging"
     required: false
   repo_mirror:
-    description: 'Mirror to use in build'
+    description: "Mirror to use in build"
     default: repo
     required: false
   repo_dev:
-    description: 'Development repository'
+    description: "Development repository"
     required: false
   pacman_mirror:
-    description: 'Optional: Specific mirror to override automatic selection'
+    description: "Optional: Specific mirror to override automatic selection"
     required: false
   publish_github:
-    description: 'Publish package on GitHub'
+    description: "Publish package on GitHub"
     required: false
-    default: 'true'
+    default: "true"
   push_to_repo:
-    description: 'Push package to repository'
+    description: "Push package to repository"
     required: false
-    default: 'true'
+    default: "true"
   update_db:
-    description: 'Update repository database'
+    description: "Update repository database"
     required: false
-    default: 'true'
+    default: "true"
   repo_host:
-    description: 'Repository host'
+    description: "Repository host"
     required: false
   repo_user:
-    description: 'Repository user'
+    description: "Repository user"
     required: false
   repo_port:
-    description: 'Repository port'
+    description: "Repository port"
     required: false
   repo_dir:
-    description: 'Repository directory'
+    description: "Repository directory"
     required: false
   github_token:
-    description: 'GitHub token for authentication'
+    description: "GitHub token for authentication"
     required: true
   telegram_token:
-    description: 'Telegram bot token for notifications'
+    description: "Telegram bot token for notifications"
     required: false
   telegram_chat_id:
-    description: 'Telegram chat ID for notifications'
+    description: "Telegram chat ID for notifications"
     required: false
   branch_type:
-    description: 'Branch type (testing or stable)'
+    description: "Branch type (testing or stable)"
     required: true
   url:
-    description: 'URL do repositório'
+    description: "URL do repositório"
     required: false
   new_branch:
-    description: 'Nome do novo branch'
+    description: "Nome do novo branch"
     required: false
   package_name:
-    description: 'Nome do pacote'
+    description: "Nome do pacote"
     required: false
   aur_package_dir:
-    description: 'Directory containing the AUR package'
+    description: "Directory containing the AUR package"
     required: false
-    default: '.'
+    default: "."
 
 # Definição dos passos da ação
 runs:
@@ -115,8 +115,8 @@ runs:
         echo "DEBUG: build_env from env: $DEBUG_BUILD_ENV"
         echo "DEBUG: tmate input: ${{ inputs.tmate }}"
         echo "DEBUG: All env variables"
-        env | sort
-  
+        #env | sort
+
     # Configuração do ambiente de build
     - name: Setup build environment
       shell: bash
@@ -129,12 +129,11 @@ runs:
           meson \
           ninja \
           yay
-          
+
         # Verifica as versões instaladas
         meson --version
         ninja --version
-  
-  
+
     - name: Configure System and Repositories
       shell: bash
       run: |
@@ -143,14 +142,14 @@ runs:
         echo "All inputs:"
         echo "${{ toJson(inputs) }}"
         echo "DEBUG: BRANCH_TYPE: $BRANCH_TYPE"
-        
+
         # Set up pacman mirror
           echo "Usando mirror especificado: ${{ inputs.pacman_mirror }}"
           echo 'Server = ${{ inputs.pacman_mirror }}' | sudo tee /etc/pacman.d/mirrorlist
-        
+
         # Remove existing BigLinux repositories
         sudo sed -i '/biglinux/,$d' /etc/pacman.conf
-        
+
         # Add appropriate repositories based on build environment
         if [ "${{ inputs.build_env }}" == "testing" ] || [ "$BRANCH_TYPE" == "testing" ]; then
           echo '
@@ -198,16 +197,15 @@ runs:
           echo "Invalid branch type specified: ${{ inputs.branch_type }}"
           exit 1
         fi
-        
+
         # Configure makepkg
         sudo sed -i '/PACKAGER=/s/.*/PACKAGER="Big Community Package Build <talesam@gmail.com>"/' /etc/makepkg.conf
         sudo sed -i '/MAKEFLAGS=/s/.*/MAKEFLAGS="-j'$(nproc)'"/' /etc/makepkg.conf
-        
+
         # Modify manjaro-chrootbuild
         sudo sed -i 's|https://repo.manjaro.org/repo|https://nnenix.mm.fcix.net/manjaro|' /usr/lib/manjaro-chrootbuild/util.sh
         sudo sed -i '/-Syy/s/-Syy/-Syy git /' /usr/lib/manjaro-chrootbuild/util-chroot.sh
 
-  
     # Download the source code
     - name: Download Source
       shell: bash
@@ -236,13 +234,12 @@ runs:
         else
           echo "No URL provided, assuming we're already in the correct repository"
         fi
-        
+
         # Debug: Show current directory and contents
         echo "Current directory: $(pwd)"
         echo "Directory contents:"
         ls -la
-  
-  
+
     ### Setup tmate session for debugging if enabled
     - name: Setup TMATE Session
       uses: mxschmitt/action-tmate@v3
@@ -250,7 +247,6 @@ runs:
       with:
         install-dependencies: false
 
-  
     # Constrói o pacote
     - name: Build package
       shell: bash
@@ -259,21 +255,21 @@ runs:
         # Debug: Mostrar ambiente de build
         echo "Build environment: ${{ inputs.build_env }}"
         echo "Package name: ${{ inputs.package_name }}"
-        
+
          # Se entramos em um diretório no passo anterior, vamos garantir que estamos nele
         if [ -d "source_repo" ]; then
           cd source_repo
         fi
-        
+
         # Debug: Mostrar diretório atual e conteúdo
         echo "Current directory: $(pwd)"
         echo "Directory contents:"
         ls -la
-        
+
         # Create and set permissions for $PKGDEST and $SRCDEST
         sudo mkdir -p /home/packages /home/sources
         sudo chown builduser:builduser /home/packages /home/sources
-        
+
         if [ "${{ inputs.build_env }}" == "aur" ]; then
           # Para pacotes AUR
           cd ${{ inputs.aur_package_dir }}
@@ -327,13 +323,13 @@ runs:
           # Executar chrootbuild com o branch determinado
           sudo chrootbuild -H -p . -b ${build_branch}
         fi
-        
+
         # Executa comando extra, se fornecido
         if [ -n "${{ inputs.extra_command }}" ]; then
           echo "Executando comando extra: ${{ inputs.extra_command }}"
           ${{ inputs.extra_command }}
         fi
-        
+
         # Debug: Mostrar conteúdo do diretório após o build
         echo "Directory contents after build:"
         ls -la
@@ -342,14 +338,13 @@ runs:
         echo "Contents of /home/sources:"
         ls -la /home/sources
 
-  
     # Assina o pacote
     - name: Sign Package
       shell: bash
       run: |
         # Importa a chave GPG
         echo "${{ inputs.gpg_key }}" | gpg --batch --import &>/dev/null
-        
+
         if [ "${{ inputs.build_env }}" == "aur" ]; then
           # Para pacotes AUR
           cd /home/packages
@@ -362,7 +357,7 @@ runs:
           fi
           cd "$gitfolder"
         fi
-        
+
         # Assina todos os pacotes encontrados
         for p in $(find $PWD -maxdepth 1 -regex '.*\.pkg\.tar\.\(xz\|zst\)'); do
           if [ -f "$p" ]; then
@@ -370,12 +365,11 @@ runs:
             gpg --pinentry-mode loopback --passphrase "${{ inputs.gpg_passphrase }}" --detach-sign "${p}"
           fi
         done
-        
+
         # Lista os arquivos .sig gerados
         echo "Arquivos de assinatura gerados:"
         ls -l *.sig || echo "Nenhum arquivo .sig encontrado"
 
-  
     # Gera checksums para os pacotes
     - name: Generate checksums
       shell: bash
@@ -392,7 +386,7 @@ runs:
           fi
           cd "$gitfolder"
         fi
-        
+
         # Gera checksums para pacotes e assinaturas
         for i in *.pkg.tar.zst; do
           if [ -f "$i" ]; then
@@ -400,19 +394,18 @@ runs:
             echo "Gerado MD5 para $i"
           fi
         done
-        
+
         for i in *.sig; do
           if [ -f "$i" ]; then
             md5sum "$i" >> "${i%.sig}.md5"
             echo "Gerado MD5 para $i"
           fi
         done
-        
+
         # Lista os arquivos MD5 gerados
         echo "Arquivos MD5 gerados:"
         ls -l *.md5 || echo "Nenhum arquivo MD5 encontrado"
-  
-  
+
     # Publish the package on GitHub
     - name: Publish Package on GitHub
       if: inputs.publish_github == 'true' && inputs.build_env != 'aur'
@@ -421,18 +414,18 @@ runs:
         gitfolder=$(find -type f -name PKGBUILD | sed 's/PKGBUILD//')
         cd $gitfolder
         ls -lh
-        
+
         # Skip linux-zen packages
         if [ -n "$(grep linux-zen <<< $gitfolder)" ];then
           exit 0
         fi
-        
+
         # Determine the last committer
         lastCommit=$(git log -1 --format="%an <%ae>")
         if [ "$(grep github-actions <<< $lastCommit)" ];then
           lastCommit=$(git log -2 --format="%an <%ae>")
         fi
-        
+
         # Set up GitHub authentication and determine the repository
         if [ -n "${{ inputs.url }}" ]; then
           echo "${{ inputs.github_token }}" | gh auth login --with-token
@@ -441,20 +434,20 @@ runs:
           echo "${{ inputs.github_token }}" | gh auth login --with-token
           repo="${{ inputs.repo }}"
         fi
-        
+
         # Fallback to github.repository if repo is still empty
         if [ -z "$repo" ]; then
           repo="${{ github.repository }}"
         fi
-        
+
         # Create and upload the release
         ls *.pkg* | head -n1 | sed 's/.pkg.*//' > release
         release=$(cat release)
-        
+
         echo "release=$release"
         echo "repo=$repo"
         echo "url=${{ inputs.url }}"
-        
+
         if [ -n "$repo" ] && [ -n "$release" ]; then
           echo "Using repository: $repo"
           echo "Creating release: $release"
@@ -466,8 +459,7 @@ runs:
           echo "Error: repo or release is empty"
           exit 1
         fi
-  
-  
+
     # Push the package to the repository
     - name: Push to Repo
       if: inputs.push_to_repo == 'true'
@@ -480,7 +472,7 @@ runs:
         mkdir -p /home/builduser/.ssh
         ssh-keyscan -t rsa -p ${{ inputs.repo_port }} ${{ inputs.repo_host }} >> /home/builduser/.ssh/known_hosts
         ip=${{ inputs.repo_host }}
-        
+
         if [ "${{ inputs.build_env }}" == "aur" ]; then
           # Para pacotes AUR
           cd /home/packages
@@ -505,9 +497,9 @@ runs:
             branch="TESTING"
           fi
         fi
-        
+
         ls -lh
-        
+
         # Function to send Telegram message
         send_telegram_message() {
           message="$1"
@@ -516,7 +508,7 @@ runs:
             -d text="$message"\
             -d parse_mode="MarkdownV2"
         }
-        
+
         # Upload the package files
         for i in *.pkg.tar.zst; do
           pkgname=$(basename $i)
@@ -537,7 +529,6 @@ runs:
           rsync -vapz -e "ssh -p ${{ inputs.repo_port }}" $i ${{ inputs.repo_user }}@$ip:${{ inputs.repo_dir }}/${branch,,}/x86_64/
         done
 
-
     # Runs only if previous steps were successful
     - name: Update Repository Database
       if: inputs.update_db == 'true' && success()
@@ -551,7 +542,7 @@ runs:
             -d text="$message" \
             -d parse_mode="MarkdownV2"
         }
-        
+
         # Determine the database name based on the branch type
         if [ "${{ inputs.branch_type }}" == "stable" ]; then
           branch="STABLE"
@@ -566,16 +557,16 @@ runs:
           echo "Error: Unknown branch type: ${{ inputs.branch_type }}"
           exit 1
         fi
-        
+
         echo "Branch: $branch"
         echo "Database name: $db_name"
-        
+
         branch_escaped=$(echo "$branch" | sed 's/[_*[\]()~`>#+\-=|{}.!]/\\&/g')
         db_name_escaped=$(echo "$db_name" | sed 's/[_*[\]()~`>#+\-=|{}.!]/\\&/g')
-        
+
         echo "🔄 Sincronizando o banco de dados do repositório $branch..."
         send_telegram_message "🔄 **Iniciando sincronização do banco de dados do repositório** \`$branch_escaped\`"
-        
+
         ssh -v ${{ inputs.repo_user }}@${{ inputs.repo_host }} -p ${{ inputs.repo_port }} << EOF
           set -x
           cd ${{ inputs.repo_dir }}/${branch,,}/x86_64
@@ -584,7 +575,7 @@ runs:
           echo "Comando repo-add concluído com código de saída: \$exit_code"
           exit \$exit_code
         EOF
-        
+
         if [ $? -eq 0 ]; then
           echo "✅ Sincronização do banco de dados concluída com sucesso!"
           send_telegram_message "✅ **Sincronização do banco de dados do repositório** \`$branch_escaped\` **concluída com sucesso\!**"
@@ -593,7 +584,6 @@ runs:
           send_telegram_message "❌ **Falha na sincronização do banco de dados do repositório** \`$branch_escaped\`\."
         fi
 
-  
     # Keeps only the most recent package
     - name: Clean Old Packages
       if: inputs.update_db == 'true' && success()
@@ -673,7 +663,6 @@ runs:
           echo "❌ Falha na limpeza de pacotes antigos."
           send_telegram_message "❌ **Falha na limpeza de pacotes antigos no repositório** \`$branch_escaped\`\."
         fi
-
 
     # Send a Telegram alert if the build fails
     - name: Telegram Alert Fail
