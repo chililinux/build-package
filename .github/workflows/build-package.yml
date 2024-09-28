@@ -119,13 +119,6 @@ jobs:
           echo "git_branch: $git_branch"
           echo "manjaro_branch: $manjaro_branch"
 
-      - name: Setup tmate session
-        uses: mxschmitt/action-tmate@v3
-        if: ${{ github.event.client_payload.tmate == true || inputs.tmate == true}}
-        with:
-          install-dependencies: false
-          detached: true
-
       - name: Build and Publish Package
         uses: ./
         with:
@@ -140,7 +133,7 @@ jobs:
           repo: ${{ github.repository }}
 
           # Parâmetros relacionados ao debug e tmate
-          tmate: ${{ github.event.inputs.debug_enabled || 'false' }}
+          tmate: ${{ github.event.inputs.tmate || false }}
 
           # Tokens e chaves de segurança
           github_token: ${{ secrets.GITHUB_TOKEN }}

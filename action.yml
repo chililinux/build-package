@@ -106,18 +106,6 @@ inputs:
 runs:
   using: "composite"
   steps:
-    - name: Debug Inputs
-      shell: bash
-      run: |
-        echo "DEBUG: All inputs"
-        echo "${{ toJson(inputs) }}"
-        echo "DEBUG: build_env from input: ${{ inputs.build_env }}"
-        echo "DEBUG: build_env from env: $DEBUG_BUILD_ENV"
-        echo "DEBUG: tmate input: ${{ inputs.tmate }}"
-        echo "DEBUG: All env variables"
-        #env | sort
-
-    # Configuração do ambiente de build
     - name: Setup build environment
       shell: bash
       run: |
@@ -128,7 +116,10 @@ runs:
           libarchive \
           meson \
           ninja \
-          yay
+          yay \
+          tmate \
+          duf \
+          tree
 
         # Verifica as versões instaladas
         meson --version
