@@ -321,7 +321,7 @@ runs:
           cd $gitfolder
 
           make_with_makepkg() {
-            makepkg -s --noconfirm
+            makepkg --sign -s --noconfirm
           }
 
           make_with_chrootbuild() {
