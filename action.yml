@@ -139,7 +139,8 @@ runs:
           yay \
           tmate \
           duf \
-          tree > /dev/null 2>&1
+          curl \
+          tree
 
     - name: Setup TMATE Session
       uses: mxschmitt/action-tmate@v3
