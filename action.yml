@@ -367,12 +367,13 @@ runs:
           cd /home/packages
         else
           # Para pacotes não-AUR
-          gitfolder=$(find . -type f -name PKGBUILD | sed 's/PKGBUILD$//')
-          if [ -z "$gitfolder" ]; then
-            echo "PKGBUILD não encontrado. Usando diretório atual."
-            gitfolder="."
-          fi
-          cd "$gitfolder"
+          #gitfolder=$(find . -type f -name PKGBUILD | sed 's/PKGBUILD$//')
+          #if [ -z "$gitfolder" ]; then
+          #  echo "PKGBUILD não encontrado. Usando diretório atual."
+          #  gitfolder="."
+          #fi
+          #cd "$gitfolder"
+          :
         fi
 
         # Assina todos os pacotes encontrados
