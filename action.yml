@@ -140,16 +140,16 @@ runs:
         install-dependencies: false
         detached: true
 
-    - name: Import GPG key
-      shell: bash
-      run: |
-        # Import GPG key
-        if gpg --batch --import <<< "${{ inputs.gpg_key }}"; then
-          echo -e "${GREEN}Importação da chave GPG foi bem-sucedida. ${RESET}"
-        else
-          echo -e "\033[01;31mErro na importação da chave GPG. Código de erro: ${PIPESTATUS[1]} ${RESET}"
-          exit 1
-        fi
+#    - name: Import GPG key
+#      shell: bash
+#      run: |
+#        # Import GPG key
+#        if gpg --batch --import <<< "${{ inputs.gpg_key }}"; then
+#          echo -e "${GREEN}=>Importação da chave GPG foi bem-sucedida. ${RESET}"
+#        else
+#          echo -e "\033[01;31m=>Erro na importação da chave GPG. Código de erro: ${PIPESTATUS[1]} ${RESET}"
+#          exit 1
+#        fi
 
     - name: Configure System and Repositories
       shell: bash
@@ -346,6 +346,14 @@ runs:
     - name: Sign Package
       shell: bash
       run: |
+        # Import GPG key
+        if gpg --batch --import <<< "${{ inputs.gpg_key }}"; then
+          echo -e "${GREEN}=>Importação da chave GPG foi bem-sucedida. ${RESET}"
+        else
+          echo -e "\033[01;31m=>Erro na importação da chave GPG. Código de erro: ${PIPESTATUS[1]} ${RESET}"
+          exit 1
+        fi
+
         if [ "${{ inputs.build_env }}" == "aur" ]; then
           # Para pacotes AUR
           cd /home/packages
@@ -362,7 +370,7 @@ runs:
         # Assina todos os pacotes encontrados
         for p in $(find $PWD -maxdepth 1 -regex '.*\.pkg\.tar\.\(xz\|zst\)'); do
           if [ -f "$p" ]; then
-            echo "Assinando pacote: $p"
+            echo -e "#{CYAN}Assinando pacote: $p ${RESET}"
             gpg --pinentry-mode loopback --passphrase "${{ inputs.gpg_passphrase }}" --detach-sign "${p}"
           fi
         done
