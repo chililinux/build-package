@@ -142,7 +142,6 @@ runs:
 
     - name: Import GPG key
       shell: bash
-      shell: bash
       run: |
         # Importa a chave GPG
         if gpg --batch --import <<< "${{ inputs.gpg_key }}"; then
