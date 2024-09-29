@@ -380,10 +380,13 @@ runs:
 
         ls -lah
         # Assina todos os pacotes encontrados
+        dirname="$(find . -iname "*.zst" -exec dirname {} \; | sort -u | sed -n '2p')"
+        pushd "$dirname"
         for p in *.zst; do
           echo -e "\033[01;36mAssinando pacote: $p ${RESET}"
           gpg --pinentry-mode loopback --passphrase "${{ inputs.gpg_passphrase }}" --detach-sign "${p}"
         done
+        popd
 
         # Lista os arquivos .sig gerados
         echo "Arquivos de assinatura gerados:"
