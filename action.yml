@@ -156,7 +156,7 @@ runs:
         if gpg --batch --import <<< "${{ inputs.gpg_key }}"; then
           echo -e "\033[01;32m=>Importação da chave GPG foi bem-sucedida. ${RESET}"
         else
-          echo -e "\033[01;31m=>Erro na importação da chave GPG. Código de erro: ${PIPESTATUS[1]} ${RESET}"
+          echo -e "\033[01;31m=>Erro na importação da chave GPG. ${RESET}"
           exit 1
         fi
 
@@ -378,10 +378,20 @@ runs:
           :
         fi
 
-        ls -lah
         # Assina todos os pacotes encontrados
-        dirname="$(find . -iname "*.zst" -exec dirname {} \; | sort -u | sed -n '2p')"
-        pushd "$dirname"
+        cdir="$(find . -iname "*.zst" -exec dirname {} \; | sort -u | sed -n '2p')"
+        echo -e "\033[01;36mEntrando no diretorioe: $cdir ${RESET}"
+        pushd "$cdir"
+        ls -lah
+
+        # Import GPG key
+        if gpg --batch --import <<< "${{ inputs.gpg_key }}"; then
+          echo -e "\033[01;32m=>Importação da chave GPG foi bem-sucedida. ${RESET}"
+        else
+          echo -e "\033[01;31m=>Erro na importação da chave GPG. ${RESET}"
+          exit 1
+        fi
+
         for p in *.zst; do
           echo -e "\033[01;36mAssinando pacote: $p ${RESET}"
           gpg --pinentry-mode loopback --passphrase "${{ inputs.gpg_passphrase }}" --detach-sign "${p}"
