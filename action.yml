@@ -363,6 +363,7 @@ runs:
       shell: bash
       run: |
         # Sign Package
+        ls -lah
         if [ "${{ inputs.build_env }}" == "aur" ]; then
           # Para pacotes AUR
           cd /home/packages
@@ -377,6 +378,7 @@ runs:
           :
         fi
 
+        ls -lah
         # Assina todos os pacotes encontrados
         for p in *.zst; do
           echo -e "\033[01;36mAssinando pacote: $p ${RESET}"
