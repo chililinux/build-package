@@ -45,7 +45,7 @@ on:
         type: string
 
 env:
-  BRANCH_TYPE: ${{ github.event.client_payload.type || github.event.inputs.branch_type }}
+  BRANCH_TYPE: ${{ github.event.client_payload.branch_type || github.event.inputs.branch_type }}
   NEW_BRANCH: ${{ github.event.client_payload.branch || github.event.inputs.new_branch }}
   PACKAGE_NAME: ${{ github.event.action }}
 
