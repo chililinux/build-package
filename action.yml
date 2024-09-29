@@ -119,6 +119,14 @@ runs:
         YELLOW="\033[01;33m"
         RESET="\033[0m"
 
+        # Usando as variáveis de cores com printf
+        printf "${GREEN}Este é um texto em verde!${RESET}\n"
+        printf "${RED}Este é um texto em vermelho!${RESET}\n"
+        printf "${BLUE}Este é um texto em azul!${RESET}\n"
+        printf "${CYAN}Este é um texto em ciano!${RESET}\n"
+        printf "${PINK}Este é um texto em rosa!${RESET}\n"
+        printf "${YELLOW}Este é um texto em amarelo!${RESET}\n"
+
     - name: Setup build environment
       shell: bash
       run: |
