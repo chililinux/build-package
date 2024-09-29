@@ -362,6 +362,7 @@ runs:
     - name: Sign Package
       shell: bash
       run: |
+        # Sign Package
         if [ "${{ inputs.build_env }}" == "aur" ]; then
           # Para pacotes AUR
           cd /home/packages
