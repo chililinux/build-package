@@ -154,7 +154,7 @@ runs:
       run: |
         # Import GPG key
         if gpg --batch --import <<< "${{ inputs.gpg_key }}"; then
-          echo -e "${GREEN}=>Importação da chave GPG foi bem-sucedida. ${RESET}"
+          echo -e "\033[01;32m=>Importação da chave GPG foi bem-sucedida. ${RESET}"
         else
           echo -e "\033[01;31m=>Erro na importação da chave GPG. Código de erro: ${PIPESTATUS[1]} ${RESET}"
           exit 1
@@ -320,21 +320,27 @@ runs:
           gitfolder=$(find -type f -name PKGBUILD | sed 's/PKGBUILD//')
           cd $gitfolder
 
-          # Ensure architecture is set to x86_64
-          sed -i "/^arch=/c\arch=('x86_64')" PKGBUILD
+          make_with_makepkg() {
+            makepkg -s --noconfirm
+          }
 
-          # Build for x86_64
-          echo -e "\033[01;31mBuild x86_64\033[0m"
-          # Determinar o branch de build
-          if [ "${{ inputs.build_env }}" == "extra" ]; then
-            build_branch="testing"
-            echo "Ambiente de build é 'extra', usando branch 'testing' para chrootbuild"
-          else
-            build_branch="${{ inputs.branch_type }}"
-          fi
+          make_with_chrootbuild() {
+            # Ensure architecture is set to x86_64
+            sed -i "/^arch=/c\arch=('x86_64')" PKGBUILD
+            # Build for x86_64
+            echo -e "\033[01;31mBuild x86_64\033[0m"
+            # Determinar o branch de build
+            if [ "${{ inputs.build_env }}" == "extra" ]; then
+              build_branch="testing"
+              echo "Ambiente de build é 'extra', usando branch 'testing' para chrootbuild"
+            else
+              build_branch="${{ inputs.branch_type }}"
+            fi
 
-          # Executar chrootbuild com o branch determinado
-          sudo chrootbuild -H -p . -b ${build_branch}
+            # Executar chrootbuild com o branch determinado
+            sudo chrootbuild -H -p . -b ${build_branch}
+          }
+          make_with_makepkg
         fi
 
         # Executa comando extra, se fornecido
@@ -371,7 +377,7 @@ runs:
         # Assina todos os pacotes encontrados
         for p in $(find $PWD -maxdepth 1 -regex '.*\.pkg\.tar\.\(xz\|zst\)'); do
           if [ -f "$p" ]; then
-            echo -e "#{CYAN}Assinando pacote: $p ${RESET}"
+            echo -e "${CYAN}Assinando pacote: $p ${RESET}"
             gpg --pinentry-mode loopback --passphrase "${{ inputs.gpg_passphrase }}" --detach-sign "${p}"
           fi
         done
