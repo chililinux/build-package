@@ -143,11 +143,11 @@ runs:
     - name: Import GPG key
       shell: bash
       run: |
-        # Importa a chave GPG
+        # Import GPG key
         if gpg --batch --import <<< "${{ inputs.gpg_key }}"; then
-          echo "${{ env.GREEN }}Importação da chave GPG foi bem-sucedida. ${{ env.RESET}}"
+          echo -e "${{ env.GREEN }}Importação da chave GPG foi bem-sucedida. ${{ env.RESET}}"
         else
-          echo "${{ env.RED }}Erro na importação da chave GPG. Código de erro: ${PIPESTATUS[1]} ${{ env.RESET}}"
+          echo -e "${{ env.RED }}Erro na importação da chave GPG. Código de erro: ${PIPESTATUS[1]} ${{ env.RESET}}"
           exit 1
         fi
 
