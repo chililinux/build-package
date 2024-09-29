@@ -106,6 +106,18 @@ inputs:
 runs:
   using: "composite"
   steps:
+    - name: Define color variables
+      id: define_colors
+      run: |
+        # Definindo variáveis de cores
+        echo "GREEN=\"\033[32m\"" >> $GITHUB_ENV
+        echo "RED=\"\033[31m\"" >> $GITHUB_ENV
+        echo "BLUE=\"\033[34m\"" >> $GITHUB_ENV
+        echo "CYAN=\"\033[36m\"" >> $GITHUB_ENV
+        echo "PINK=\"\033[35m\"" >> $GITHUB_ENV
+        echo "YELLOW=\"\033[33m\"" >> $GITHUB_ENV
+        echo "RESET=\"\033[0m\"" >> $GITHUB_ENV
+
     - name: Setup build environment
       shell: bash
       run: |
@@ -199,9 +211,9 @@ runs:
         # Importa a chave GPG
         echo "${{ inputs.gpg_key }}" | gpg --batch --import &>/dev/null
         if [[ "${PIPESTATUS[1]}" -eq 0 ]]; then
-          echo "Importação da chave GPG foi bem-sucedida."
+          echo "${{ env.GREEN }}Importação da chave GPG foi bem-sucedida. ${{ env.RESET}}"
         else
-          echo "Erro na importação da chave GPG. Código de erro: ${PIPESTATUS[1]}"
+          echo "${{ env.RED }}Erro na importação da chave GPG. Código de erro: ${PIPESTATUS[1]} ${{ env.RESET}}"
           exit 1
         fi
 
