@@ -378,11 +378,9 @@ runs:
         fi
 
         # Assina todos os pacotes encontrados
-        for p in $(find $PWD -maxdepth 1 -regex '.*\.pkg\.tar\.\(xz\|zst\)'); do
-          if [ -f "$p" ]; then
-            echo -e "\033[01;36mAssinando pacote: $p ${RESET}"
-            gpg --pinentry-mode loopback --passphrase "${{ inputs.gpg_passphrase }}" --detach-sign "${p}"
-          fi
+        for p in *.zst; do
+          echo -e "\033[01;36mAssinando pacote: $p ${RESET}"
+          gpg --pinentry-mode loopback --passphrase "${{ inputs.gpg_passphrase }}" --detach-sign "${p}"
         done
 
         # Lista os arquivos .sig gerados
