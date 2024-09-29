@@ -322,7 +322,7 @@ runs:
           cd $gitfolder
 
           make_with_makepkg() {
-            makepkg --sign -s --noconfirm
+            makepkg -s --noconfirm
           }
 
           make_with_chrootbuild() {
@@ -378,7 +378,7 @@ runs:
         # Assina todos os pacotes encontrados
         for p in $(find $PWD -maxdepth 1 -regex '.*\.pkg\.tar\.\(xz\|zst\)'); do
           if [ -f "$p" ]; then
-            echo -e "${CYAN}Assinando pacote: $p ${RESET}"
+            echo -e "\033[01;36mAssinando pacote: $p ${RESET}"
             gpg --pinentry-mode loopback --passphrase "${{ inputs.gpg_passphrase }}" --detach-sign "${p}"
           fi
         done
