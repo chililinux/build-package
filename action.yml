@@ -108,6 +108,7 @@ runs:
   steps:
     - name: Define color variables
       id: define_colors
+      shell: bash
       run: |
         # Definindo variáveis de cores
         echo "GREEN=\"\033[32m\"" >> $GITHUB_ENV
@@ -140,6 +141,7 @@ runs:
         detached: true
 
     - name: Import GPG key
+      shell: bash
       shell: bash
       run: |
         # Importa a chave GPG
