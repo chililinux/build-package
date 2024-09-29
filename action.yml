@@ -111,12 +111,12 @@ runs:
       shell: bash
       run: |
         # Definindo variáveis de cores
-        GREEN="\033[32m"
-        RED="\033[31m"
-        BLUE="\033[34m"
-        CYAN="\033[36m"
-        PINK="\033[35m"
-        YELLOW="\033[33m"
+        GREEN="\033[01;32m"
+        RED="\033[01;31m"
+        BLUE="\033[01;34m"
+        CYAN="\033[01;36m"
+        PINK="\033[01;35m"
+        YELLOW="\033[01;33m"
         RESET="\033[0m"
 
     - name: Setup build environment
@@ -147,7 +147,7 @@ runs:
         if gpg --batch --import <<< "${{ inputs.gpg_key }}"; then
           echo -e "${GREEN}Importação da chave GPG foi bem-sucedida. ${RESET}"
         else
-          echo -e "${RED}Erro na importação da chave GPG. Código de erro: ${PIPESTATUS[1]} ${RESET}"
+          echo -e "\033[01;31mErro na importação da chave GPG. Código de erro: ${PIPESTATUS[1]} ${RESET}"
           exit 1
         fi
 
