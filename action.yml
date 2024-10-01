@@ -369,9 +369,9 @@ runs:
           cd /home/packages
         else
           # Para pacotes não-AUR
-          gitfolder=$(find . -type f -name PKGBUILD | sed 's/PKGBUILD$//')
+          gitfolder=$(find . -name "*.zst" -exec dirname {} \;)
           if [ -z "$gitfolder" ]; then
-            echo "PKGBUILD não encontrado. Usando diretório atual."
+            echo "Arquivo de pacote '.zst' não encontrado. Usando diretório atual."
             gitfolder="."
           fi
           cd "$gitfolder"
