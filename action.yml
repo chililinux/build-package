@@ -405,9 +405,9 @@ runs:
           cd /home/packages
         else
           # Para pacotes não-AUR
-          gitfolder=$(find . -type f -name PKGBUILD | sed 's/PKGBUILD$//')
+          gitfolder=$(find . -name "*.zst" -exec dirname {} \;)
           if [ -z "$gitfolder" ]; then
-            echo "PKGBUILD não encontrado. Usando diretório atual."
+            echo "Arquivo de pacote '.zst' não encontrado. Usando diretório atual."
             gitfolder="."
           fi
           cd "$gitfolder"
@@ -415,16 +415,11 @@ runs:
 
         # Gera checksums para pacotes e assinaturas
         for i in *.pkg.tar.zst; do
-          if [ -f "$i" ]; then
-            md5sum "$i" >> "$i.md5"
-            echo "Gerado MD5 para $i"
-          fi
-        done
-
-        for i in *.sig; do
-          if [ -f "$i" ]; then
-            md5sum "$i" >> "${i%.sig}.md5"
-            echo "Gerado MD5 para $i"
+          if [[ -f "$i" ]]; then
+            echo -e "\033[01;36mGerado MD5 para: $i ${RESET}"
+            md5sum "$i"     >> "$i.md5"
+            md5sum "$i.sig" >> "$i.sig.md5"
+            echo -e "\033[01;36mMD5 gerado para: $i ${RESET}"
           fi
         done
 
