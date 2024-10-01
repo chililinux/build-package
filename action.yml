@@ -391,7 +391,6 @@ runs:
           echo -e "\033[01;36mAssinando pacote: $p ${RESET}"
           gpg --pinentry-mode loopback --passphrase "${{ inputs.gpg_passphrase }}" --detach-sign "${p}"
         done
-        popd
 
         # Lista os arquivos .sig gerados
         echo "Arquivos de assinatura gerados:"
