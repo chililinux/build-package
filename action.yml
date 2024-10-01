@@ -318,7 +318,7 @@ runs:
           ls -la /home/packages
         else
           # Para pacotes não-AUR
-          gitfolder=$(find . -name "*.zst" -exec dirname {} \;)
+          gitfolder=$(find . -name "PKGBUILD" -exec dirname {} \;)
           cd $gitfolder
 
           make_with_makepkg() {
