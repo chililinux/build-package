@@ -318,7 +318,7 @@ runs:
           ls -la /home/packages
         else
           # Para pacotes não-AUR
-          gitfolder=$(find -type f -name PKGBUILD | sed 's/PKGBUILD//')
+          gitfolder=$(find . -name "*.zst" -exec dirname {} \;)
           cd $gitfolder
 
           make_with_makepkg() {
@@ -432,7 +432,7 @@ runs:
       if: inputs.publish_github == 'true' && inputs.build_env != 'aur'
       shell: bash
       run: |
-        gitfolder=$(find -type f -name PKGBUILD | sed 's/PKGBUILD//')
+        gitfolder=$(find . -name "*.zst" -exec dirname {} \;)
         cd $gitfolder
         ls -lh
 
@@ -500,7 +500,7 @@ runs:
           branch="TESTING"  # Todos os pacotes AUR vão para TESTING
         else
           # Para pacotes não-AUR
-          gitfolder=$(find -type f -name PKGBUILD | sed 's/PKGBUILD//')
+          gitfolder=$(find . -name "*.zst" -exec dirname {} \;)
           cd $gitfolder
 
           # Determine the last committer (apenas para pacotes não-AUR)
