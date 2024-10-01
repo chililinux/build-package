@@ -489,7 +489,7 @@ runs:
         LANG: en_US.UTF-8
         LC_ALL: en_US.UTF-8
       run: |
-        # Set up SSH
+        # Setup SSH
         mkdir -p /home/builduser/.ssh
         ssh-keyscan -t rsa -p ${{ inputs.repo_port }} ${{ inputs.repo_host }} >> /home/builduser/.ssh/known_hosts
         ip=${{ inputs.repo_host }}
