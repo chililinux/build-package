@@ -141,8 +141,8 @@ runs:
         pkgname="${{ inputs.package_name }}"
         branch="${{ inputs.branch_type }}"
         pkgname_escaped=$(echo "$pkgname" | sed 's/[_*[\]()~`>#+\-=|{}.!]/\\&/g')
-        branch_escaped=$(echo "$branch" | sed 's/[_*[\]()~`>#+\-=|{}.!]/\\&/g')
-        send_telegram_message "📦 **Iniciando criação do pacote** \`$pkgname_escaped\` \`$branch_escaped\`"
+        branch_escaped=$(echo "${branch^^}" | sed 's/[_*[\]()~`>#+\-=|{}.!]/\\&/g')
+        send_telegram_message "📦 **Iniciando criação do pacote** \`$pkgname_escaped\` **no repositório** \`$branch_escaped\`"
 
     - name: Setup build environment
       shell: bash
