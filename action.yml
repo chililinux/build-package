@@ -143,10 +143,11 @@ runs:
         repositorio="${{ inputs.repo_dir }}"
         pkgname_escaped=$(echo "$pkgname" | sed 's/[_*[\]()~`>#+\-=|{}.!]/\\&/g')
         branch_escaped=$(echo "${branch^^}" | sed 's/[_*[\]()~`>#+\-=|{}.!]/\\&/g')
-        send_telegram_message "📦 **[pass 1/3] Iniciando criação**%0A"\
-        "**     pacote: ** \`$pkgname_escaped\`%0A"\
-        "**        url: ** \`$repositorio\`%0A"\
-        "**repositório: ** \`$branch_escaped\`"
+        send_telegram_message "---%0A"\
+        "⭐ **[pass 1/3] Iniciando criação**%0A"\
+        "**pacote      : ** \`$pkgname_escaped\`%0A"\
+        "**url         : ** \`$repositorio\`%0A"\
+        "**repositório : ** \`$branch_escaped\`"
 
     - name: Setup build environment
       shell: bash
@@ -560,20 +561,20 @@ runs:
           echo "📦 Pacote $pkgname sendo enviado para o repositório 🚀 $branch 🎯"
           #send_telegram_message "📦 [pass 2/3] **Pacote** \`$pkgname_escaped\` **sendo enviado para o repositório** \`$branch_escaped\`"
           send_telegram_message "📦 **[pass 2/3] Enviando pacote para repositório**%0A"\
-          "**     pacote: ** \`$pkgname_escaped\`%0A"\
-          "**repositório: ** \`$branch_escaped\`"
+          "**pacote      : ** \`$pkgname_escaped\`%0A"\
+          "**repositório : ** \`$branch_escaped\`"
           #rsync -vapz -e "ssh -p ${{ inputs.repo_port }}" $i ${{ inputs.repo_user }}@$ip:${{ inputs.repo_dir }}/${branch,,}/x86_64/
           rsync -vapz -e "ssh -p ${{ inputs.repo_port }}" $i ${{ inputs.repo_user }}@$ip:${{ inputs.repo_dir }}
           if [ $? -eq 0 ]; then
             #send_telegram_message "✅ [pass 3/3] **Pacote** \`$pkgname_escaped\` **enviado com sucesso para o repositório** \`$branch_escaped\`"
             send_telegram_message "✅ **[pass 3/3] Enviado com sucesso**%0A"\
-            "**     pacote: ** \`$pkgname_escaped\`%0A"\
-            "**repositório: ** \`$branch_escaped\`"
+            "**pacote      : ** \`$pkgname_escaped\`%0A"\
+            "**repositório : ** \`$branch_escaped\`"
           else
             #send_telegram_message "❌ [pass 3/3] **Falha ao enviar o pacote** \`$pkgname_escaped\` **para o repositório** \`$branch_escaped\`"
             send_telegram_message "❌ **[pass 3/3] Falha ao enviar**%0A"\
-            "**     pacote: ** \`$pkgname_escaped\`%0A"\
-            "**repositório: ** \`$branch_escaped\`"
+            "**pacote      : ** \`$pkgname_escaped\`%0A"\
+            "**repositório : ** \`$branch_escaped\`"
           fi
         done
         for i in *.sig *.md5; do
