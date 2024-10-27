@@ -130,6 +130,14 @@ runs:
     - name: Inicializando criação de pacote
       shell: bash
       run: |
+        # Function to send Telegram message
+        send_telegram_message() {
+          message="$1"
+          curl -s -X POST "https://api.telegram.org/bot${{ inputs.telegram_token }}/sendMessage" \
+            -d chat_id="${{ inputs.telegram_chat_id }}" \
+            -d text="$message"\
+            -d parse_mode="MarkdownV2"
+        }
         send_telegram_message "📦 **Iniciando criação do pacote** \`$pkgname_escaped\` \`$branch_escaped\`"
 
     - name: Setup build environment
