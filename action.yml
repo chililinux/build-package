@@ -1,5 +1,34 @@
-name: "Community Package Build Action"
-description: "Builds Manjaro/Community Packages"
+# -*- coding: utf-8 -*-
+#
+#  action.yml
+#  Created: 2024/09/15 - 08:10
+#  Altered: 2024/10/27 - 12:26
+#
+#  Copyright (c) 2024-2024, Vilmar Catafesta <vcatafesta@gmail.com>
+#  All rights reserved.
+#
+#  Redistribution and use in source and binary forms, with or without
+#  modification, are permitted provided that the following conditions
+#  are met:
+#  1. Redistributions of source code must retain the above copyright
+#     notice, this list of conditions and the following disclaimer.
+#  2. Redistributions in binary form must reproduce the above copyright
+#     notice, this list of conditions and the following disclaimer in the
+#     documentation and/or other materials provided with the distribution.
+#
+#  THIS SOFTWARE IS PROVIDED BY THE AUTHOR AS IS'' AND ANY EXPRESS OR
+#  IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
+#  OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.
+#  IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY DIRECT, INDIRECT,
+#  INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT
+#  NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+#  DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+#  THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+#  (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
+#  THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+##############################################################################
+name: "Chililinux Package Build Action"
+description: "Builds Arch Packages"
 
 inputs:
   build_env:
@@ -143,7 +172,7 @@ runs:
         repositorio="${{ inputs.repo_dir }}"
         pkgname_escaped=$(echo "$pkgname" | sed 's/[_*[\]()~`>#+\-=|{}.!]/\\&/g')
         branch_escaped=$(echo "${branch^^}" | sed 's/[_*[\]()~`>#+\-=|{}.!]/\\&/g')
-        send_telegram_message "⭐ **\[pass 1/3\] Iniciando criação**%0A"\
+        send_telegram_message "⭐ **\[step 1/3\] Iniciando criação**%0A"\
         "**pacote:** \`$pkgname_escaped\`%0A"\
         "**url:** \`$repositorio\`%0A"\
         "**repositório:** \`$branch_escaped\`"
@@ -558,15 +587,15 @@ runs:
           branch_escaped=$(echo "$branch" | sed 's/[_*[\]()~`>#+\-=|{}.!]/\\&/g')
 
           echo "📦 Pacote $pkgname sendo enviado para o repositório 🚀 $branch 🎯"
-          #send_telegram_message "📦 [pass 2/3] **Pacote** \`$pkgname_escaped\` **sendo enviado para o repositório** \`$branch_escaped\`"
-          send_telegram_message "📦 **\[pass 2/3\] Enviando para o repositório**%0A**pacote:** \`$pkgname_escaped\`%0A**repositório:** \`$branch_escaped\`"
+          #send_telegram_message "📦 [step 2/3] **Pacote** \`$pkgname_escaped\` **sendo enviado para o repositório** \`$branch_escaped\`"
+          send_telegram_message "📦 **\[step 2/3\] Enviando para o repositório**%0A**pacote:** \`$pkgname_escaped\`%0A**repositório:** \`$branch_escaped\`"
 
           #rsync -vapz -e "ssh -p ${{ inputs.repo_port }}" $i ${{ inputs.repo_user }}@$ip:${{ inputs.repo_dir }}
           rsync -vapz -e "ssh -p ${{ inputs.repo_port }}" $i ${{ inputs.repo_user }}@$ip:${{ inputs.repo_dir }}/${branch,,}/x86_64/
           if [ $? -eq 0 ]; then
-            send_telegram_message "✅ **\[pass 3/3\] Enviado com sucesso**%0A**pacote      : ** \`$pkgname_escaped\`%0A**repositório : ** \`$branch_escaped\`"
+            send_telegram_message "✅ **\[step 3/3\] Enviado com sucesso**%0A**pacote      : ** \`$pkgname_escaped\`%0A**repositório : ** \`$branch_escaped\`"
           else
-            send_telegram_message "❌ **\[pass 3/3\] Falha ao enviar**%0A**pacote      : ** \`$pkgname_escaped\`%0A**repositório : ** \`$branch_escaped\`"
+            send_telegram_message "❌ **\[step 3/3\] Falha ao enviar**%0A**pacote      : ** \`$pkgname_escaped\`%0A**repositório : ** \`$branch_escaped\`"
           fi
         done
         for i in *.sig *.md5; do
@@ -715,4 +744,4 @@ runs:
 #      run: |
 #        curl -s -X POST "https://api.telegram.org/bot${{ inputs.telegram_token }}/sendMessage" \
 #          -d chat_id="${{ inputs.telegram_chat_id }}" \
-#          -d text="🚨 FALHA ao criar Pacote Community: ${{ github.event.action }} a partir do branch ${{ github.ref_name }}, link do erro: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }} 🖥"
+#          -d text="🚨 FALHA ao criar Pacote: ${{ github.event.action }} a partir do branch ${{ github.ref_name }}, link do erro: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }} 🖥"
