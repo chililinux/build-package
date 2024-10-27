@@ -127,6 +127,11 @@ runs:
         printf "${PINK}Este é um texto em rosa!${RESET}\n"
         printf "${YELLOW}Este é um texto em amarelo!${RESET}\n"
 
+    - name: Inicializando criação de pacote
+      shell: bash
+      run: |
+        send_telegram_message "📦 **Iniciando criação do pacote** \`$pkgname_escaped\` \`$branch_escaped\`"
+
     - name: Setup build environment
       shell: bash
       run: |
@@ -537,7 +542,7 @@ runs:
           branch_escaped=$(echo "$branch" | sed 's/[_*[\]()~`>#+\-=|{}.!]/\\&/g')
 
           echo "📦 Pacote $pkgname sendo enviado para o repositório 🚀 $branch 🎯"
-          send_telegram_message "📦 **Pacote** \`$pkgname_escaped\` **sendo enviado para o repositório** 🚀 \`$branch_escaped\`🎯"
+          send_telegram_message "📦 **Pacote** \`$pkgname_escaped\` **sendo enviado para o repositório** \`$branch_escaped\`"
           #rsync -vapz -e "ssh -p ${{ inputs.repo_port }}" $i ${{ inputs.repo_user }}@$ip:${{ inputs.repo_dir }}/${branch,,}/x86_64/
           rsync -vapz -e "ssh -p ${{ inputs.repo_port }}" $i ${{ inputs.repo_user }}@$ip:${{ inputs.repo_dir }}
           if [ $? -eq 0 ]; then
