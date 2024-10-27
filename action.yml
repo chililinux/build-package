@@ -138,6 +138,9 @@ runs:
             -d text="$message"\
             -d parse_mode="MarkdownV2"
         }
+        pkgname="${{ inputs.package_name }}"
+        pkgname_escaped=$(echo "$pkgname" | sed 's/[_*[\]()~`>#+\-=|{}.!]/\\&/g')
+        branch_escaped=$(echo "$branch" | sed 's/[_*[\]()~`>#+\-=|{}.!]/\\&/g')
         send_telegram_message "📦 **Iniciando criação do pacote** \`$pkgname_escaped\` \`$branch_escaped\`"
 
     - name: Setup build environment
