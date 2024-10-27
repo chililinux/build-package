@@ -143,7 +143,7 @@ runs:
         repositorio="${{ inputs.repo_dir }}"
         pkgname_escaped=$(echo "$pkgname" | sed 's/[_*[\]()~`>#+\-=|{}.!]/\\&/g')
         branch_escaped=$(echo "${branch^^}" | sed 's/[_*[\]()~`>#+\-=|{}.!]/\\&/g')
-        send_telegram_message "📦 **[pass 1/3] Iniciando criação do pacote** \`$pkgname_escaped\` \`$repositorio\` **no repositório** \`$branch_escaped\`"
+        send_telegram_message "📦 **[pass 1/3] Iniciando criação\npacote : ** \`$pkgname_escaped\` **\nrepositorio : ** \`$repositorio\` **no repositório** \`$branch_escaped\`"
 
     - name: Setup build environment
       shell: bash
