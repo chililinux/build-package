@@ -649,7 +649,7 @@ runs:
           AllOldPackages=$(find "$PWD" -type f -iname "*.$PKG_EXT" | sort -Vr | awk -F "$FETCH_RE" 'lista[$1]++')
           for old in ${AllOldPackages[@]}; do
             echo "Removing old package: $((++count)), $old"
-            rm -f "${old}" "${old}.sig" "${old}.md5" "${old}.sig.md5"
+            rm -fv "${old}" "${old}.sig" "${old}.md5" "${old}.sig.md5"
           done
 
           # Remover os bancos de dados existentes
