@@ -172,7 +172,7 @@ runs:
         repositorio="${{ inputs.repo_dir }}"
         pkgname_escaped=$(echo "$pkgname" | sed 's/[_*[\]()~`>#+\-=|{}.!]/\\&/g')
         branch_escaped=$(echo "${branch^^}" | sed 's/[_*[\]()~`>#+\-=|{}.!]/\\&/g')
-        send_telegram_message "⭐ **\[step 1/3\] Iniciando criação de pacote**%0A"\
+        send_telegram_message "⭐ **\[step 1/5\] Iniciando criação de pacote**%0A"\
         "**nome:** \`$pkgname_escaped\`%0A"\
         "**url:** \`$repositorio\`%0A"\
         "**repositório:** \`$branch_escaped\`"
@@ -588,13 +588,13 @@ runs:
           file_size_bytes=$(stat -c%s "$i")
 
           echo "Pacote $pkgname sendo enviado para o repositório ${branch,,}"
-          #send_telegram_message "📦 **\[step 2/3\] Enviando pacote para o repositório**%0A**nome         : ** \`$pkgname_escaped\`%0A**repositório : ** \`$branch_escaped\`"
-          send_telegram_message "📦 **\[step 2/3\] Enviando pacote para o repositório**%0A**nome         : ** \`$pkgname_escaped\`%0A**tamanho bytes: ** \`$file_size_bytes\`%0A**repositório  : ** \`$branch_escaped\`"
+          #send_telegram_message "📦 **\[step 2/5\] Enviando pacote para o repositório**%0A**nome         : ** \`$pkgname_escaped\`%0A**repositório : ** \`$branch_escaped\`"
+          send_telegram_message "📦 **\[step 2/5\] Enviando pacote para o repositório**%0A**nome         : ** \`$pkgname_escaped\`%0A**tamanho bytes: ** \`$file_size_bytes\`%0A**repositório  : ** \`$branch_escaped\`"
 
           if rsync -vapz -e "ssh -p ${{ inputs.repo_port }}" $i ${{ inputs.repo_user }}@$ip:${{ inputs.repo_dir }}/${branch,,}/x86_64/; then
-            send_telegram_message "✅ **\[step 3/3\] Pacote enviado com sucesso**%0A**nome         : ** \`$pkgname_escaped\`%0A**repositório : ** \`$branch_escaped\`"
+            send_telegram_message "✅ **\[step 3/5\] Pacote enviado com sucesso**%0A**nome         : ** \`$pkgname_escaped\`%0A**repositório : ** \`$branch_escaped\`"
           else
-            send_telegram_message "❌ **\[step 3/3\] Falha ao enviar pacote**%0A**nome         : ** \`$pkgname_escaped\`%0A**repositório : ** \`$branch_escaped\`"
+            send_telegram_message "❌ **\[step 3/5\] Falha ao enviar pacote**%0A**nome         : ** \`$pkgname_escaped\`%0A**repositório : ** \`$branch_escaped\`"
           fi
         done
 
@@ -638,22 +638,10 @@ runs:
         branch_escaped=$(echo "$branch" | sed 's/[_*[\]()~`>#+\-=|{}.!]/\\&/g')
 
         echo "🧹 Limpando pacotes antigos no repositório $branch..."
-        send_telegram_message "🧹 **Iniciando limpeza de pacotes antigos no repositório** \`$branch_escaped\`"
+        send_telegram_message "🧹 **\[step 4/5\] Iniciando limpeza de pacote antigos**%0A**repositório : ** \`$branch_escaped\`"
 
         ssh "${{ inputs.repo_user }}@${{ inputs.repo_host }}" -p "${{ inputs.repo_port }}" << 'EOF'
-          #set -x
-          cd "${{ inputs.repo_dir }}/${branch,,}/x86_64"
-
-          ## Manter apenas a versão mais recente de cada pacote
-          #for pkg in $(ls *.pkg.tar.zst | cut -d- -f1 | sort -u); do
-          #  newest=\$(ls \${pkg}-*.pkg.tar.zst | sort -V | tail -n1)
-          #  for old in \${pkg}-*.pkg.tar.zst; do
-          #    if [ "\$old" != "\$newest" ]; then
-          #      echo "Removing old package: \$old"
-          #      rm -f "\$old" "\${old}.sig" "\${old}.md5"
-          #    fi
-          #  done
-          #done
+          cd "${{ inputs.repo_dir }}/${{ inputs.branch_type }}/x86_64"
 
           # Manter apenas a versão mais recente de cada pacote
           FETCH_RE='-[^-]+[0-9]+[^.]*.pkg[^.]*.tar.zst'
@@ -671,7 +659,7 @@ runs:
           #repo-add $db_name.db.tar.gz *.pkg.tar.zst
 
           # Remover arquivos .sig e .md5 órfãos
-          for file in *.sig *.md5; do
+          for file in *.sig *.md5 *.sig.md5; do
             base_name=${file%.*}
             if [[ ! -f "${base_name}" ]]; then
               echo "Removing orphaned file: $file"
@@ -685,10 +673,10 @@ runs:
 
         if [ $? -eq 0 ]; then
           echo "✅ Limpeza de pacotes antigos concluída com sucesso!"
-          send_telegram_message "✅ **Limpeza de pacotes antigos no repositório** \`$branch_escaped\` **concluída com sucesso\!**"
+          send_telegram_message "✅ **\[step 5/5\] Limpeza de pacotes antigos concluída com êxito"
         else
           echo "❌ Falha na limpeza de pacotes antigos."
-          send_telegram_message "❌ **Falha na limpeza de pacotes antigos no repositório** \`$branch_escaped\`\."
+          send_telegram_message "❌ **\[step 5/5\] Falha na limpeza de pacotes antigos"
         fi
 
 #    # Runs only if previous steps were successful
