@@ -603,6 +603,85 @@ runs:
           rsync -vapz -e "ssh -p ${{ inputs.repo_port }}" $i ${{ inputs.repo_user }}@$ip:${{ inputs.repo_dir }}/${branch,,}/x86_64/
         done
 
+    # Keeps only the most recent package
+    - name: Clean Old Packages
+      if: inputs.update_db == 'true' && success()
+      shell: bash
+      run: |
+        # Function to send Telegram message
+        send_telegram_message() {
+          message="$1"
+          curl -s -X POST "https://api.telegram.org/bot${{ inputs.telegram_token }}/sendMessage" \
+            -d chat_id="${{ inputs.telegram_chat_id }}" \
+            -d text="$message" \
+            -d parse_mode="MarkdownV2"
+        }
+
+        # Determine the branch based on the branch type
+        if [ "${{ inputs.branch_type }}" == "stable" ]; then
+          branch="STABLE"
+          db_name="chili-stable"
+        elif [ "${{ inputs.branch_type }}" == "extra" ]; then
+          branch="EXTRA"
+          db_name="chili-extra"
+        elif [ "${{ inputs.branch_type }}" == "aur" ] || [ "${{ inputs.branch_type }}" == "testing" ]; then
+          branch="TESTING"
+          db_name="chili-testing"
+        else
+          echo "Error: Unknown branch type: ${{ inputs.branch_type }}"
+          exit 1
+        fi
+
+        echo "Branch       : $branch"
+        echo "Database name: $db_name"
+
+        branch_escaped=$(echo "$branch" | sed 's/[_*[\]()~`>#+\-=|{}.!]/\\&/g')
+
+        echo "🧹 Limpando pacotes antigos no repositório $branch..."
+        send_telegram_message "🧹 **Iniciando limpeza de pacotes antigos no repositório** \`$branch_escaped\`"
+
+        ssh ${{ inputs.repo_user }}@${{ inputs.repo_host }} -p ${{ inputs.repo_port }} << EOF
+          set -x
+          cd ${{ inputs.repo_dir }}/${branch,,}/x86_64
+
+          # Manter apenas a versão mais recente de cada pacote
+          for pkg in $(ls *.pkg.tar.zst | cut -d- -f1 | sort -u); do
+            newest=\$(ls \${pkg}-*.pkg.tar.zst | sort -V | tail -n1)
+            for old in \${pkg}-*.pkg.tar.zst; do
+              if [ "\$old" != "\$newest" ]; then
+                echo "Removing old package: \$old"
+                rm -f "\$old" "\${old}.sig" "\${old}.md5"
+              fi
+            done
+          done
+
+          # Remover os bancos de dados existentes
+          #rm -f $db_name.db.tar.gz $db_name.files.tar.gz
+
+          # Recriar o banco de dados com os pacotes presentes
+          #repo-add $db_name.db.tar.gz *.pkg.tar.zst
+
+          # Remover arquivos .sig e .md5 órfãos
+          for file in *.sig *.md5; do
+            base_name=\${file%.*}
+            if [ ! -f "\${base_name}" ]; then
+              echo "Removing orphaned file: \$file"
+              rm -f "\$file"
+            fi
+          done
+          exit_code=\$?
+          echo "Limpeza concluída com código de saída: \$exit_code"
+          exit \$exit_code
+        EOF
+
+        if [ $? -eq 0 ]; then
+          echo "✅ Limpeza de pacotes antigos concluída com sucesso!"
+          send_telegram_message "✅ **Limpeza de pacotes antigos no repositório** \`$branch_escaped\` **concluída com sucesso\!**"
+        else
+          echo "❌ Falha na limpeza de pacotes antigos."
+          send_telegram_message "❌ **Falha na limpeza de pacotes antigos no repositório** \`$branch_escaped\`\."
+        fi
+
 #    # Runs only if previous steps were successful
 #    - name: Update Repository Database
 #      if: inputs.update_db == 'true' && success()
@@ -656,85 +735,6 @@ runs:
 #        else
 #          echo "❌ Falha na sincronização do banco de dados."
 #          send_telegram_message "❌ **Falha na sincronização do banco de dados do repositório** \`$branch_escaped\`\."
-#        fi
-#
-#    # Keeps only the most recent package
-#    - name: Clean Old Packages
-#      if: inputs.update_db == 'true' && success()
-#      shell: bash
-#      run: |
-#        # Function to send Telegram message
-#        send_telegram_message() {
-#          message="$1"
-#          curl -s -X POST "https://api.telegram.org/bot${{ inputs.telegram_token }}/sendMessage" \
-#            -d chat_id="${{ inputs.telegram_chat_id }}" \
-#            -d text="$message" \
-#            -d parse_mode="MarkdownV2"
-#        }
-#
-#        # Determine the branch based on the branch type
-#        if [ "${{ inputs.branch_type }}" == "stable" ]; then
-#          branch="STABLE"
-#          db_name="community-stable"
-#        elif [ "${{ inputs.branch_type }}" == "extra" ]; then
-#          branch="EXTRA"
-#          db_name="community-extra"
-#        elif [ "${{ inputs.branch_type }}" == "aur" ] || [ "${{ inputs.branch_type }}" == "testing" ]; then
-#          branch="TESTING"
-#          db_name="community-testing"
-#        else
-#          echo "Error: Unknown branch type: ${{ inputs.branch_type }}"
-#          exit 1
-#        fi
-#
-#        echo "Branch: $branch"
-#        echo "Database name: $db_name"
-#
-#        branch_escaped=$(echo "$branch" | sed 's/[_*[\]()~`>#+\-=|{}.!]/\\&/g')
-#
-#        echo "🧹 Limpando pacotes antigos no repositório $branch..."
-#        send_telegram_message "🧹 **Iniciando limpeza de pacotes antigos no repositório** \`$branch_escaped\`"
-#
-#        ssh ${{ inputs.repo_user }}@${{ inputs.repo_host }} -p ${{ inputs.repo_port }} << EOF
-#          set -x
-#          cd ${{ inputs.repo_dir }}/${branch,,}/x86_64
-#
-#          # Manter apenas a versão mais recente de cada pacote
-#          for pkg in $(ls *.pkg.tar.zst | cut -d- -f1 | sort -u); do
-#            newest=\$(ls \${pkg}-*.pkg.tar.zst | sort -V | tail -n1)
-#            for old in \${pkg}-*.pkg.tar.zst; do
-#              if [ "\$old" != "\$newest" ]; then
-#                echo "Removing old package: \$old"
-#                rm -f "\$old" "\${old}.sig" "\${old}.md5"
-#              fi
-#            done
-#          done
-#
-#          # Remover os bancos de dados existentes
-#          rm -f $db_name.db.tar.gz $db_name.files.tar.gz
-#
-#          # Recriar o banco de dados com os pacotes presentes
-#          repo-add $db_name.db.tar.gz *.pkg.tar.zst
-#
-#          # Remover arquivos .sig e .md5 órfãos
-#          for file in *.sig *.md5; do
-#            base_name=\${file%.*}
-#            if [ ! -f "\${base_name}" ]; then
-#              echo "Removing orphaned file: \$file"
-#              rm -f "\$file"
-#            fi
-#          done
-#          exit_code=\$?
-#          echo "Limpeza concluída com código de saída: \$exit_code"
-#          exit \$exit_code
-#        EOF
-#
-#        if [ $? -eq 0 ]; then
-#          echo "✅ Limpeza de pacotes antigos concluída com sucesso!"
-#          send_telegram_message "✅ **Limpeza de pacotes antigos no repositório** \`$branch_escaped\` **concluída com sucesso\!**"
-#        else
-#          echo "❌ Falha na limpeza de pacotes antigos."
-#          send_telegram_message "❌ **Falha na limpeza de pacotes antigos no repositório** \`$branch_escaped\`\."
 #        fi
 #
 #    # Send a Telegram alert if the build fails
