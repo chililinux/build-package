@@ -644,15 +644,24 @@ runs:
           set -x
           cd ${{ inputs.repo_dir }}/${branch,,}/x86_64
 
+          ## Manter apenas a versão mais recente de cada pacote
+          #for pkg in $(ls *.pkg.tar.zst | cut -d- -f1 | sort -u); do
+          #  newest=\$(ls \${pkg}-*.pkg.tar.zst | sort -V | tail -n1)
+          #  for old in \${pkg}-*.pkg.tar.zst; do
+          #    if [ "\$old" != "\$newest" ]; then
+          #      echo "Removing old package: \$old"
+          #      rm -f "\$old" "\${old}.sig" "\${old}.md5"
+          #    fi
+          #  done
+          #done
+
           # Manter apenas a versão mais recente de cada pacote
-          for pkg in $(ls *.pkg.tar.zst | cut -d- -f1 | sort -u); do
-            newest=\$(ls \${pkg}-*.pkg.tar.zst | sort -V | tail -n1)
-            for old in \${pkg}-*.pkg.tar.zst; do
-              if [ "\$old" != "\$newest" ]; then
-                echo "Removing old package: \$old"
-                rm -f "\$old" "\${old}.sig" "\${old}.md5"
-              fi
-            done
+          FETCH_RE='-[^-]+[0-9]+[^.]*.pkg[^.]*.tar.zst'
+          PKG_EXT='pkg.tar.zst'
+          AllOldPackages=$(find "$PWD" -type f -iname "*.$PKG_EXT" | sort -Vr | awk -F "$FETCH_RE" 'lista[$1]++')
+          for old in "${AllOldPackages[@]}"; do
+            echo "Removing old package: $old"
+            rm -f "$old*"
           done
 
           # Remover os bancos de dados existentes
