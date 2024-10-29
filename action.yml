@@ -640,7 +640,7 @@ runs:
         echo "🧹 Limpando pacotes antigos no repositório $branch..."
         send_telegram_message "🧹 **Iniciando limpeza de pacotes antigos no repositório** \`$branch_escaped\`"
 
-        ssh "${{ inputs.repo_user }}@${{ inputs.repo_host }}" -p "${{ inputs.repo_port" }} << 'EOF'
+        ssh "${{ inputs.repo_user }}@${{ inputs.repo_host }}" -p "${{ inputs.repo_port }}" << 'EOF'
           #set -x
           cd "${{ inputs.repo_dir }}/${branch,,}/x86_64"
 
