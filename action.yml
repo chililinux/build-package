@@ -648,7 +648,7 @@ runs:
           PKG_EXT='pkg.tar.zst'
           AllOldPackages=$(find "$PWD" -type f -iname "*.$PKG_EXT" | sort -Vr | awk -F "$FETCH_RE" 'lista[$1]++')
           for old in ${AllOldPackages[@]}; do
-            echo "Removing old package: $((++count)), $old"
+            echo -e "\033[01;31m=>Removendo pacote antigo : \[$((++count))\]=>${old} ${RESET}"
             rm -fv "${old}" "${old}.sig" "${old}.md5" "${old}.sig.md5"
           done
 
@@ -661,9 +661,9 @@ runs:
           # Remover arquivos .sig, .md5 e .sig.md5 órfãos
           for file in *.sig *.md5 *.sig.md5; do
             base_name=${file%.*}
-            echo "Searching file: $file for orphaned"
+            echo -e "\033[01;32m=>Procurando por arquivo orfão. Processando : $file ${RESET}"
             if [[ ! -f "${base_name}" ]]; then
-              echo "Removing orphaned file: $file"
+              echo -e "\033[01;31m=>Removendo arquivo orfão : $file ${RESET}"
               rm -fv "$file"
             fi
           done
