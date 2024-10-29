@@ -658,12 +658,12 @@ runs:
           # Recriar o banco de dados com os pacotes presentes
           #repo-add $db_name.db.tar.gz *.pkg.tar.zst
 
-          # Remover arquivos .sig e .md5 órfãos
+          # Remover arquivos .sig, .md5 e .sig.md5 órfãos
           for file in *.sig *.md5 *.sig.md5; do
             base_name=${file%.*}
             if [[ ! -f "${base_name}" ]]; then
               echo "Removing orphaned file: $file"
-              rm -f "$file"
+              rm -fv "$file"
             fi
           done
           exit_code=$?
