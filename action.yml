@@ -661,6 +661,7 @@ runs:
           # Remover arquivos .sig, .md5 e .sig.md5 órfãos
           for file in *.sig *.md5 *.sig.md5; do
             base_name=${file%.*}
+            echo "Searching file: $file for orphaned"
             if [[ ! -f "${base_name}" ]]; then
               echo "Removing orphaned file: $file"
               rm -fv "$file"
