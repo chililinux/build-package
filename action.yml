@@ -194,7 +194,7 @@ runs:
 
     - name: Setup TMATE Session
       uses: mxschmitt/action-tmate@v3
-      #if: ${{ github.event.client_payload.tmate == true || inputs.tmate == true}}
+      if: ${{ github.event.client_payload.tmate == true || inputs.tmate == true}}
       with:
         install-dependencies: false
         detached: true
