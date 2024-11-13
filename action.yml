@@ -177,8 +177,7 @@ runs:
         branch_escaped=$(echo "${branch^^}" | sed 's/[_*[\]()~`>#+\-=|{}.!]/\\&/g')
         send_telegram_message "⭐ **\[step 1/5\] Iniciando criação de pacote**%0A"\
         "**nome:** \`$pkgname_escaped\`%0A"\
-        "**iniciado po:** \`$started_by_user\`%0A"\
-        "**triggered por:** \`$triggered_by_user\`%0A"\
+        "**iniciado/triggered por:** \`$started_by_user\`/\`$triggered_by_user\`%0A"\
         "**url:** \`$repositorio\`%0A"\
         "**repositório:** \`$branch_escaped\`"
 
