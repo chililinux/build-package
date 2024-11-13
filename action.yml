@@ -603,10 +603,10 @@ runs:
           pkgname_escaped=$(echo "$pkgname" | sed 's/[_*[\]()~`>#+\-=|{}.!]/\\&/g')
           branch_escaped=$(echo "$branch" | sed 's/[_*[\]()~`>#+\-=|{}.!]/\\&/g')
           file_size_bytes=$(stat -c%s "$i")
-
+          file_size_kb=$((file_size_bytes / 1024))
           echo "Pacote $pkgname sendo enviado para o repositório ${branch,,}"
           #send_telegram_message "📦 **\[step 2/5\] Enviando pacote para o repositório**%0A**nome         : ** \`$pkgname_escaped\`%0A**repositório : ** \`$branch_escaped\`"
-          send_telegram_message "📦 **\[step 2/5\] Enviando pacote para o repositório**%0A**nome         : ** \`$pkgname_escaped\`%0A**tamanho bytes: ** \`$file_size_bytes\`%0A**repositório  : ** \`$branch_escaped\`"
+          send_telegram_message "📦 **\[step 2/5\] Enviando pacote para o repositório**%0A**nome         : ** \`$pkgname_escaped\`%0A**tamanho B/KB: ** \`$file_size_bytes/$file_size_kb\`%0A**repositório  : ** \`$branch_escaped\`"
 
           if rsync -vapz -e "ssh -p ${{ inputs.repo_port }}" $i ${{ inputs.repo_user }}@$ip:${{ inputs.repo_dir }}/${branch,,}/x86_64/; then
             send_telegram_message "✅ **\[step 3/5\] Pacote enviado com sucesso**%0A**nome         : ** \`$pkgname_escaped\`%0A**repositório : ** \`$branch_escaped\`"
