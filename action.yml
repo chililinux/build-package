@@ -177,9 +177,22 @@ runs:
         "**url:** \`$repositorio\`%0A"\
         "**repositório:** \`$branch_escaped\`"
 
+    - name: Debug Inputs
+      shell: bash
+      run: |
+        echo "DEBUG: All inputs"
+        echo "${{ toJson(inputs) }}"
+        echo "DEBUG: build_env from input: ${{ inputs.build_env }}"
+        echo "DEBUG: build_env from env: $DEBUG_BUILD_ENV"
+        echo "DEBUG: tmate input: ${{ inputs.tmate }}"
+        echo "DEBUG: All env variables"
+        env | sort
+
+    # Configuração do ambiente de build
     - name: Setup build environment
       shell: bash
       run: |
+        # Atualiza o sistema e instala as dependências necessárias
         sudo pacman -Syu --quiet --needed --noconfirm \
           base-devel \
           cmake \
