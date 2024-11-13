@@ -170,12 +170,10 @@ runs:
         pkgname="${{ inputs.package_name }}"
         branch="${{ inputs.branch_type }}"
         repositorio="${{ inputs.repo_dir }}"
-        usuario="${{ github.actor }}"
         pkgname_escaped=$(echo "$pkgname" | sed 's/[_*[\]()~`>#+\-=|{}.!]/\\&/g')
         branch_escaped=$(echo "${branch^^}" | sed 's/[_*[\]()~`>#+\-=|{}.!]/\\&/g')
         send_telegram_message "⭐ **\[step 1/5\] Iniciando criação de pacote**%0A"\
         "**nome:** \`$pkgname_escaped\`%0A"\
-        "**usuario:** \`$usuario\`%0A"\
         "**url:** \`$repositorio\`%0A"\
         "**repositório:** \`$branch_escaped\`"
 
