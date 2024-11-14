@@ -697,6 +697,31 @@ runs:
           send_telegram_message "❌ **\[step 5/5\] Falha na limpeza de pacotes antigos"
         fi
 
+    - name: Capturar hora de término e calcular duração
+      shell: bash
+      run: |
+        # Function to send Telegram message
+        send_telegram_message() {
+          local message="$1"
+          local parse_mode="$2"  # "HTML" neste caso
+
+          [[ -z $parse_mode ]] && parse_mode="MarkdownV2"
+          curl -s -X POST "https://api.telegram.org/bot${{ inputs.telegram_token }}/sendMessage" \
+            -d chat_id="${{ inputs.telegram_chat_id }}" \
+            -d text="$message" \
+            -d parse_mode="${parse_mode}"
+        }
+
+        END_TIMESTAMP=$(date +%s)
+        START_TIMESTAMP="${{ inputs.start_time }}"
+        duration=$((END_TIMESTAMP - START_TIMESTAMP))
+
+        hours=$((duration / 3600))
+        minutes=$(( (duration % 3600) / 60 ))
+        seconds=$((duration % 60))
+        echo "Duração total da action: ${hours}h ${minutes}m ${seconds}s"
+        send_telegram_message "⏳ Job finalizado em ${hours}h ${minutes}m ${seconds}s" 'HTML'
+
 #    # Runs only if previous steps were successful
 #    - name: Update Repository Database
 #      if: inputs.update_db == 'true' && success()
