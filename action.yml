@@ -156,17 +156,27 @@ runs:
         printf "${PINK}Este é um texto em rosa!${RESET}\n"
         printf "${YELLOW}Este é um texto em amarelo!${RESET}\n"
 
+    - name: "Definir função send_telegram_message"
+      run: |
+        cat << 'EOF' > /tmp/send_telegram_message.sh
+        send_telegram_message() {
+          local message="$1"
+          local parse_mode="$2"
+
+          [[ -z $parse_mode ]] && parse_mode="MarkdownV2"
+          curl -s -X POST "https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendMessage" \
+            -d chat_id="${TELEGRAM_CHAT_ID}" \
+            -d text="$message" \
+            -d parse_mode="${parse_mode}"
+        }
+        EOF
+
     - name: Inicializando criação de pacote
       shell: bash
       run: |
         # Function to send Telegram message
-        send_telegram_message() {
-          message="$1"
-          curl -s -X POST "https://api.telegram.org/bot${{ inputs.telegram_token }}/sendMessage" \
-            -d chat_id="${{ inputs.telegram_chat_id }}" \
-            -d text="$message"\
-            -d parse_mode="MarkdownV2"
-        }
+        source /tmp/send_telegram_message.sh
+
         pkgname="${{ inputs.package_name }}"
         branch="${{ inputs.branch_type }}"
         repositorio="${{ inputs.repo_dir }}"
@@ -589,13 +599,7 @@ runs:
         ls -lh
 
         # Function to send Telegram message
-        send_telegram_message() {
-          message="$1"
-          curl -s -X POST "https://api.telegram.org/bot${{ inputs.telegram_token }}/sendMessage" \
-            -d chat_id="${{ inputs.telegram_chat_id }}" \
-            -d text="$message"\
-            -d parse_mode="MarkdownV2"
-        }
+        source /tmp/send_telegram_message.sh
 
         # Upload the package files
         for i in *.pkg.tar.zst; do
@@ -626,13 +630,7 @@ runs:
       shell: bash
       run: |
         # Function to send Telegram message
-        send_telegram_message() {
-          message="$1"
-          curl -s -X POST "https://api.telegram.org/bot${{ inputs.telegram_token }}/sendMessage" \
-            -d chat_id="${{ inputs.telegram_chat_id }}" \
-            -d text="$message" \
-            -d parse_mode="MarkdownV2"
-        }
+        source /tmp/send_telegram_message.sh
 
         # Determine the branch based on the branch type
         if [ "${{ inputs.branch_type }}" == "stable" ]; then
@@ -701,19 +699,12 @@ runs:
       shell: bash
       run: |
         # Function to send Telegram message
-        send_telegram_message() {
-          local message="$1"
-          local parse_mode="$2"  # "HTML" neste caso
+        source /tmp/send_telegram_message.sh
 
-          [[ -z $parse_mode ]] && parse_mode="MarkdownV2"
-          curl -s -X POST "https://api.telegram.org/bot${{ inputs.telegram_token }}/sendMessage" \
-            -d chat_id="${{ inputs.telegram_chat_id }}" \
-            -d text="$message" \
-            -d parse_mode="${parse_mode}"
-        }
-
+        STAR_TIME="${{ inputs.start_time }}"
+        START_TIMESTAMP="${{ inputs.start_timestamp }}"
+        END_TIME=$(date +"%Y-%m-%d %H:%M:%S")  # Hora completa
         END_TIMESTAMP=$(date +%s)
-        START_TIMESTAMP="${{ inputs.start_time }}"
         duration=$((END_TIMESTAMP - START_TIMESTAMP))
 
         hours=$((duration / 3600))
@@ -721,8 +712,8 @@ runs:
         seconds=$((duration % 60))
         echo "Duração total da action: ${hours}h ${minutes}m ${seconds}s"
         send_telegram_message "⏳ <b>[step 6/6] Job finalizado em:</b> <code>${hours}h ${minutes}m ${seconds}s</code>
-        <b>Inicio:</b> <code>${START_TIMESTAMP}</code>
-        <b>Fim   :</b> <code>${END_TIMESTAMP}</code>" "HTML"
+        <b>Inicio:</b> <code>${START_TIME}</code>
+        <b>Fim   :</b> <code>${END_TIME}</code>" "HTML"
 
 #    # Runs only if previous steps were successful
 #    - name: Update Repository Database

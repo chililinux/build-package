@@ -91,7 +91,8 @@ jobs:
           START_TIME=$(date +"%Y-%m-%d %H:%M:%S")  # Hora completa
           START_TIMESTAMP=$(date +%s)  # Timestamp em segundos
           echo "Início do Workflow: $START_TIME"
-          echo "START_TIME=$START_TIMESTAMP" >> $GITHUB_ENV
+          echo "START_TIME=$START_TIME" >> $GITHUB_ENV
+          echo "START_TIMESTAMP=$START_TIMESTAMP" >> $GITHUB_ENV
 
       - uses: actions/checkout@v4
         with:
@@ -195,3 +196,4 @@ jobs:
 
           # Passando o START_TIME para action.yml
           start_time: ${{ env.START_TIME }}
+          start_timestamp: ${{ env.START_TIMESTAMP }}
