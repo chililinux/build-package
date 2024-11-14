@@ -198,10 +198,10 @@ runs:
         pkgname_escaped=$(echo "$pkgname" | sed 's/[_*[\]()~`>#+\-=|{}.!]/\\&/g')
         branch_escaped=$(echo "${branch^^}" | sed 's/[_*[\]()~`>#+\-=|{}.!]/\\&/g')
         send_telegram_message "⭐ <b>[step 1/6] Iniciando criação de pacote</b>
-        <b>nome                  :</b> <code>${pkgname_escaped}</code>
-        <b>iniciado/triggered por:</b> <code>${started_by_user}/${triggered_by_user}</code>
-        <b>path                  :</b> <code>${repositorio}</code>
-        <b>branch                :</b> <code>${branch_escaped}</code>" "HTML"
+        <b>nome               :</b> <code>${pkgname_escaped}</code>
+        <b>iniciado/triggered :</b> <code>${started_by_user}/${triggered_by_user}</code>
+        <b>path               :</b> <code>${repositorio}</code>
+        <b>branch             :</b> <code>${branch_escaped}</code>" "HTML"
 
     - name: Debug Inputs
       shell: bash
