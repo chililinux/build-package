@@ -192,6 +192,7 @@ runs:
         pkgname="${{ inputs.package_name }}"
         branch="${{ inputs.branch_type }}"
         repositorio="${{ inputs.repo_dir }}"
+        repo_origem="${{ inputs.url }}"
         #https://docs.github.com/pt/enterprise-server@3.10/actions/writing-workflows/choosing-what-your-workflow-does/accessing-contextual-information-about-workflow-runs
         started_by_user="${{ github.actor }}"
         triggered_by_user="${{ github.triggering_actor }}"
@@ -199,6 +200,7 @@ runs:
         branch_escaped=$(echo "${branch^^}" | sed 's/[_*[\]()~`>#+\-=|{}.!]/\\&/g')
         send_telegram_message "⭐ <b>[step 1/6] INICIANDO CRIAÇÃO DE PACOTE</b>
         <b>nome:</b> <code>${pkgname_escaped}</code>
+        <b>origem:</b> <code>${repo_origem}</code>
         <b>iniciado/triggered:</b> <code>${started_by_user}/${triggered_by_user}</code>
         <b>path:</b> <code>${repositorio}</code>
         <b>branch:</b> <code>${branch_escaped}</code>" "HTML"
