@@ -157,6 +157,7 @@ runs:
         printf "${YELLOW}Este é um texto em amarelo!${RESET}\n"
 
     - name: "Definir função send_telegram_message"
+      shell: bash
       run: |
         cat << 'EOF' > /tmp/send_telegram_message.sh
         send_telegram_message() {
