@@ -165,8 +165,8 @@ runs:
     - name: Definir função send_telegram_message
       shell: bash
       env:
-        TELEGRAM_TOKEN: ${{ secrets.TOKEN_BOT }}
-        TELEGRAM_CHAT_ID: ${{ secrets.CHAT_ID }}
+        TELEGRAM_TOKEN: "${{ inputs.telegram_token }}"
+        TELEGRAM_CHAT_ID: "${{ inputs.telegram_chat_id }}"
       run: |
         # Definir a função send_telegram_message no script temporário
         cat << 'EOF' > /tmp/send_telegram_message.sh
