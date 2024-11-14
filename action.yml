@@ -141,7 +141,7 @@ inputs:
 runs:
   using: "composite"
   steps:
-    - name: Define color variables
+    - name: Definindo variáveis de cores
       id: define_colors
       shell: bash
       run: |
@@ -162,19 +162,20 @@ runs:
         printf "${PINK}Este é um texto em rosa!${RESET}\n"
         printf "${YELLOW}Este é um texto em amarelo!${RESET}\n"
 
-    - name: "Definir função send_telegram_message"
+    - name: Definir função send_telegram_message
       shell: bash
       run: |
+        # Definir função send_telegram_message
         cat << 'EOF' > /tmp/send_telegram_message.sh
         send_telegram_message() {
           local message="$1"
           local parse_mode="$2"
 
           [[ -z $parse_mode ]] && parse_mode="MarkdownV2"
-          curl -s -X POST "https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendMessage" \
-            -d chat_id="${TELEGRAM_CHAT_ID}" \
-            -d text="$message" \
-            -d parse_mode="${parse_mode}"
+          curl -s -X POST "https://api.telegram.org/bot\${TELEGRAM_TOKEN}/sendMessage" \
+            -d chat_id="\${TELEGRAM_CHAT_ID}" \
+            -d text="\$message" \
+            -d parse_mode="\${parse_mode}"
         }
         EOF
 
@@ -201,6 +202,7 @@ runs:
     - name: Debug Inputs
       shell: bash
       run: |
+        # Debug Inputs
         echo "DEBUG: All inputs"
         echo "${{ toJson(inputs) }}"
         echo "DEBUG: build_env from input: ${{ inputs.build_env }}"
@@ -209,10 +211,10 @@ runs:
         echo "DEBUG: All env variables"
         env | sort
 
-    # Configuração do ambiente de build
     - name: Setup build environment
       shell: bash
       run: |
+        # Configuração do ambiente de build
         # Atualiza o sistema e instala as dependências necessárias
         sudo pacman -Syu --quiet --needed --noconfirm \
           base-devel \
@@ -311,10 +313,10 @@ runs:
         sudo sed -i 's|https://repo.manjaro.org/repo|https://nnenix.mm.fcix.net/manjaro|' /usr/lib/manjaro-chrootbuild/util.sh
         sudo sed -i '/-Syy/s/-Syy/-Syy git /' /usr/lib/manjaro-chrootbuild/util-chroot.sh
 
-    # Download the source code
     - name: Download Source
       shell: bash
       run: |
+        # Download the source code
         if [ "${{ inputs.build_env }}" == "aur" ]; then
           echo "Cloning AUR package from ${{ inputs.url }}"
           git clone ${{ inputs.url }} aur_package
