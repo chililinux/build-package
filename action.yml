@@ -175,7 +175,7 @@ runs:
         triggered_by_user="${{ github.triggering_actor }}"
         pkgname_escaped=$(echo "$pkgname" | sed 's/[_*[\]()~`>#+\-=|{}.!]/\\&/g')
         branch_escaped=$(echo "${branch^^}" | sed 's/[_*[\]()~`>#+\-=|{}.!]/\\&/g')
-        send_telegram_message "⭐ **\[step 1/5\] Iniciando criação de pacote**%0A"\
+        send_telegram_message "⭐ **\[step 1/6\] Iniciando criação de pacote**%0A"\
         "**nome:** \`$pkgname_escaped\`%0A"\
         "**iniciado/triggered por:** \`$started_by_user\`/\`$triggered_by_user\`%0A"\
         "**url:** \`$repositorio\`%0A"\
@@ -605,13 +605,13 @@ runs:
           file_size_bytes=$(stat -c%s "$i")
           file_size_kb=$((file_size_bytes / 1024))
           echo "Pacote $pkgname sendo enviado para o repositório ${branch,,}"
-          #send_telegram_message "📦 **\[step 2/5\] Enviando pacote para o repositório**%0A**nome         : ** \`$pkgname_escaped\`%0A**repositório : ** \`$branch_escaped\`"
-          send_telegram_message "📦 **\[step 2/5\] Enviando pacote para o repositório**%0A**nome         : ** \`$pkgname_escaped\`%0A**tamanho bytes/k: ** \`${file_size_bytes}/${file_size_kb}k\`%0A**repositório  : ** \`$branch_escaped\`"
+          #send_telegram_message "📦 **\[step 2/6\] Enviando pacote para o repositório**%0A**nome         : ** \`$pkgname_escaped\`%0A**repositório : ** \`$branch_escaped\`"
+          send_telegram_message "📦 **\[step 2/6\] Enviando pacote para o repositório**%0A**nome         : ** \`$pkgname_escaped\`%0A**tamanho bytes/kb: ** \`${file_size_bytes}/${file_size_kb}k\`%0A**repositório  : ** \`$branch_escaped\`"
 
           if rsync -vapz -e "ssh -p ${{ inputs.repo_port }}" $i ${{ inputs.repo_user }}@$ip:${{ inputs.repo_dir }}/${branch,,}/x86_64/; then
-            send_telegram_message "✅ **\[step 3/5\] Pacote enviado com sucesso**%0A**nome         : ** \`$pkgname_escaped\`%0A**repositório : ** \`$branch_escaped\`"
+            send_telegram_message "✅ **\[step 3/6\] Pacote enviado com sucesso**%0A**nome         : ** \`$pkgname_escaped\`%0A**repositório : ** \`$branch_escaped\`"
           else
-            send_telegram_message "❌ **\[step 3/5\] Falha ao enviar pacote**%0A**nome         : ** \`$pkgname_escaped\`%0A**repositório : ** \`$branch_escaped\`"
+            send_telegram_message "❌ **\[step 3/6\] Falha ao enviar pacote**%0A**nome         : ** \`$pkgname_escaped\`%0A**repositório : ** \`$branch_escaped\`"
           fi
         done
 
@@ -655,7 +655,7 @@ runs:
         branch_escaped=$(echo "$branch" | sed 's/[_*[\]()~`>#+\-=|{}.!]/\\&/g')
 
         echo "🧹 Limpando pacotes antigos no repositório $branch..."
-        send_telegram_message "🧹 **\[step 4/5\] Iniciando limpeza de pacote antigos**%0A**repositório : ** \`$branch_escaped\`"
+        send_telegram_message "🧹 **\[step 4/6\] Iniciando limpeza de pacote antigos**%0A**repositório : ** \`$branch_escaped\`"
 
         ssh "${{ inputs.repo_user }}@${{ inputs.repo_host }}" -p "${{ inputs.repo_port }}" << 'EOF'
           cd "${{ inputs.repo_dir }}/${{ inputs.branch_type }}/x86_64"
@@ -691,10 +691,10 @@ runs:
 
         if [ $? -eq 0 ]; then
           echo "✅ Limpeza de pacotes antigos concluída com sucesso!"
-          send_telegram_message "✅ **\[step 5/5\] Limpeza de pacotes antigos concluída com êxito"
+          send_telegram_message "✅ **\[step 5/6\] Limpeza de pacotes antigos concluída com êxito"
         else
           echo "❌ Falha na limpeza de pacotes antigos."
-          send_telegram_message "❌ **\[step 5/5\] Falha na limpeza de pacotes antigos"
+          send_telegram_message "❌ **\[step 5/6\] Falha na limpeza de pacotes antigos"
         fi
 
     - name: Capturar hora de término e calcular duração
@@ -720,7 +720,10 @@ runs:
         minutes=$(( (duration % 3600) / 60 ))
         seconds=$((duration % 60))
         echo "Duração total da action: ${hours}h ${minutes}m ${seconds}s"
-        send_telegram_message "⏳ <b>[step 6/6] Job finalizado em:</b> ${hours}h ${minutes}m ${seconds}s" 'HTML'
+        send_telegram_message "⏳ <b>[step 6/6] Job finalizado em:</b> ${hours}h ${minutes}m ${seconds}s
+        <b>Inicio:</b> <code>${START_TIMESTAMP}</code>
+        <b>Fim   :</b> <code>${END_TIMESTAMP}</code>"
+        'HTML'
 
 #    # Runs only if previous steps were successful
 #    - name: Update Repository Database
