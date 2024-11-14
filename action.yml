@@ -130,6 +130,12 @@ inputs:
     description: "Directory containing the AUR package"
     required: false
     default: "."
+  start_time:
+    description: "Hora de início do workflow"
+    required: false
+  start_timestamp:
+    description: "Timestamp de início do workflow"
+    required: false
 
 # Definição dos passos da ação
 runs:
