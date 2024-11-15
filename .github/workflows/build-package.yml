@@ -94,6 +94,18 @@ jobs:
           echo "START_TIME=$START_TIME" >> $GITHUB_ENV
           echo "START_TIMESTAMP=$START_TIMESTAMP" >> $GITHUB_ENV
 
+      - name: Enviar notificação para o Telegram
+        shell: bash
+        run: |
+          TELEGRAM_TOKEN="${{ secrets.TOKEN_BOT }}"
+          CHAT_ID="${{ secrets.CHAT_ID }}"
+          MESSAGE="🚀 Workflow iniciado para o pacote *${{ env.PACKAGE_NAME }}* no branch *${{ env.BRANCH_TYPE }}*. Hora de início: ${{ env.START_TIME }}"
+
+          curl -s -X POST "https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendMessage" \
+            -d chat_id="${CHAT_ID}" \
+            -d text="${MESSAGE}" \
+            -d parse_mode="Markdown"
+
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
