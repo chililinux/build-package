@@ -99,13 +99,15 @@ jobs:
         run: |
           TELEGRAM_TOKEN="${{ secrets.TOKEN_BOT }}"
           CHAT_ID="${{ secrets.CHAT_ID }}"
-          MESSAGE="🚀 Workflow iniciado para o pacote *${{ env.PACKAGE_NAME }}* no branch *${{ env.BRANCH_TYPE }}*. Hora de início: ${{ env.START_TIME }}"
-
-          MESSAGE="🚀 <b>[step 0/6] WORKFLOW INCIADO PARA O PACOTE</b>
+          BRANCH_ORIGEM="${{ github.ref_name }}"
+          REPO_ORIGEM="${{ inputs.url }}"
+          MESSAGE="🚀 <b>[step 0/6] WORKFLOW INICIADO</b>
           <b>Job :</b> <code>#${GITHUB_RUN_NUMBER}</code>
-          <b>Pacote:</b> <code>${{ env.PACKAGE_NAME }}</code>
           <b>Inicio:</b> <code>${{ env.START_TIME }}</code>
-          <b>branch:</b> <code>${{ env.BRANCH_TYPE }}</code>"
+          <b>Pacote:</b> <code>${{ env.PACKAGE_NAME }}</code>
+          <b>Origem:</b> <code>${REPO_ORIGEM}</code>
+          <b>Branch:</b> <code>${BRANCH_ORIGEM}</code>"
+          <b>Repositorio:</b> <code>${{ env.BRANCH_TYPE }}</code>"
 
           curl -s -X POST "https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendMessage" \
             -d chat_id="${CHAT_ID}" \
