@@ -106,7 +106,7 @@ jobs:
           <b>Inicio:</b> <code>${{ env.START_TIME }}</code>
           <b>Pacote:</b> <code>${{ env.PACKAGE_NAME }}</code>
           <b>Origem:</b> <code>${REPO_ORIGEM}</code>
-          <b>Branch:</b> <code>${BRANCH_ORIGEM}</code>"
+          <b>Branch:</b> <code>${BRANCH_ORIGEM}</code>
           <b>Repositorio:</b> <code>${{ env.BRANCH_TYPE }}</code>"
 
           curl -s -X POST "https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendMessage" \
