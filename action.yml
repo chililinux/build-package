@@ -81,6 +81,8 @@ inputs:
   pacman_mirror:
     description: "Optional: Specific mirror to override automatic selection"
     required: false
+    #default: 'https://nnenix.mm.fcix.net/manjaro/stable/$repo/$arch'
+    default: "https://mirrors.ocf.berkeley.edu/manjaro/stable/$repo/$arch"
   publish_github:
     description: "Publish package on GitHub"
     required: false
@@ -198,12 +200,13 @@ runs:
         triggered_by_user="${{ github.triggering_actor }}"
         pkgname_escaped=$(echo "$pkgname" | sed 's/[_*[\]()~`>#+\-=|{}.!]/\\&/g')
         branch_escaped=$(echo "${branch^^}" | sed 's/[_*[\]()~`>#+\-=|{}.!]/\\&/g')
+
         send_telegram_message "⭐ <b>[step 1/6] INICIANDO CRIAÇÃO DE PACOTE</b>
-        <b>nome:</b> <code>${pkgname_escaped}</code>
-        <b>origem:</b> <code>${repo_origem}</code>
-        <b>iniciado/triggered:</b> <code>${started_by_user}/${triggered_by_user}</code>
+        <b>Nome:</b> <code>${pkgname_escaped}</code>
+        <b>Origem:</b> <code>${repo_origem}</code>
+        <b>Iniciado/Triggered:</b> <code>${started_by_user}/${triggered_by_user}</code>
         <b>path:</b> <code>${repositorio}</code>
-        <b>branch:</b> <code>${branch_escaped}</code>" "HTML"
+	<b>branch:</b> <code>${branch_escaped}</code>" "HTML"
 
     - name: Debug Inputs
       shell: bash
@@ -230,7 +233,7 @@ runs:
           ninja \
           yay \
           tmate \
-          duf \
+	  duf \
           curl \
           tree
 
@@ -268,6 +271,14 @@ runs:
           [community-testing]
           SigLevel = PackageRequired
           Server = https://repo.communitybig.org/testing/$arch
+          
+          [community-stable]
+          SigLevel = PackageRequired
+          Server = https://repo.communitybig.org/stable/$arch
+          
+          [community-extra]
+          SigLevel = PackageRequired
+          Server = https://repo.communitybig.org/extra/$arch
 
           [biglinux-testing]
           SigLevel = PackageRequired
@@ -286,6 +297,10 @@ runs:
           [community-stable]
           SigLevel = PackageRequired
           Server = https://repo.communitybig.org/stable/$arch
+          
+          [community-extra]
+          SigLevel = PackageRequired
+          Server = https://repo.communitybig.org/extra/$arch
 
           [biglinux-stable]
           SigLevel = PackageRequired
@@ -377,7 +392,7 @@ runs:
         sudo chown builduser:builduser /home/packages /home/sources
 
         if [ "${{ inputs.build_env }}" == "aur" ]; then
-          # Para pacotes AUR
+          # For packages AUR
           cd ${{ inputs.aur_package_dir }}
           echo "Construindo pacote AUR: ${{ inputs.package_name }}"
           echo "Current AUR package directory: $(pwd)"
@@ -387,11 +402,11 @@ runs:
           # Give permissions to builduser for the current directory
           sudo chown -R builduser:builduser .
 
-          # Criar diretório temporário para makepkg
+          # Create temporary directory for makepkg
           sudo mkdir -p /tmp/makepkg
           sudo chown builduser:builduser /tmp/makepkg
 
-          # Extrair dependências do PKGBUILD
+          # Extract dependencies from PKGBUILD
           depends=$(grep -E "^depends=\(" PKGBUILD | sed 's/depends=(//' | sed 's/)$//' | tr -d "'")
           makedepends=$(grep -E "^makedepends=\(" PKGBUILD | sed 's/makedepends=(//' | sed 's/)$//' | tr -d "'")
 
@@ -589,7 +604,7 @@ runs:
         if [ "${{ inputs.build_env }}" == "aur" ]; then
           # Para pacotes AUR
           cd /home/packages
-          branch="TESTING"  # Todos os pacotes AUR vão para TESTING
+          branch="EXTRA"  # Todos os pacotes AUR vão para EXTRA
         else
           # Para pacotes não-AUR
           gitfolder=$(find . -name "*.zst" -exec dirname {} \;)
@@ -618,7 +633,7 @@ runs:
 
         # Upload the package files
         for i in *.pkg.tar.zst; do
-          pkgname=$(basename $i)
+          pkgname=$(basename "$i")
           pkgname_escaped=$(echo "$pkgname" | sed 's/[_*[\]()~`>#+\-=|{}.!]/\\&/g')
           branch_escaped=$(echo "$branch" | sed 's/[_*[\]()~`>#+\-=|{}.!]/\\&/g')
           repositorio="${{ inputs.repo_dir }}"
@@ -627,9 +642,9 @@ runs:
 
           echo "Pacote $pkgname sendo enviado para o repositório ${branch,,}"
           send_telegram_message "📦 <b>[step 2/6] ENVIANDO PACOTE PARA REPOSITÓRIO</b>
-          <b>nome:</b> <code>${pkgname_escaped}</code>
-          <b>tamanho bytes/kb:</b> <code>${file_size_bytes}/${file_size_kb}k</code>
-          <b>url:</b> <code>${repositorio}</code>
+          <b>Pacote:</b> <code>${pkgname_escaped}</code>
+          <b>Tamanho bytes/kb:</b> <code>${file_size_bytes}/${file_size_kb}k</code>
+          <b>Url:</b> <code>${repositorio}</code>
           <b>branch:</b> <code>${branch_escaped}</code>" "HTML"
 
           if rsync -vapz -e "ssh -p ${{ inputs.repo_port }}" $i ${{ inputs.repo_user }}@$ip:${{ inputs.repo_dir }}/${branch,,}/x86_64/; then
@@ -640,7 +655,6 @@ runs:
         done
 
         for i in *.sig *.md5; do
-          #rsync -vapz -e "ssh -p ${{ inputs.repo_port }}" $i ${{ inputs.repo_user }}@$ip:${{ inputs.repo_dir }}
           rsync -vapz -e "ssh -p ${{ inputs.repo_port }}" $i ${{ inputs.repo_user }}@$ip:${{ inputs.repo_dir }}/${branch,,}/x86_64/
         done
 
@@ -667,7 +681,7 @@ runs:
           exit 1
         fi
 
-        echo "Branch       : $branch"
+        echo "Branch: $branch"
         echo "Database name: $db_name"
 
         branch_escaped=$(echo "$branch" | sed 's/[_*[\]()~`>#+\-=|{}.!]/\\&/g')
@@ -715,13 +729,23 @@ runs:
           send_telegram_message "❌ **\[step 5/6\] Falha na limpeza de pacotes antigos"
         fi
 
+    # Send a Telegram alert if the build fails
+    - name: Telegram Alert Fail
+      if: failure()
+      shell: bash
+      run: |
+        curl -s -X POST "https://api.telegram.org/bot${{ inputs.telegram_token }}/sendMessage" \
+          -d chat_id="${{ inputs.telegram_chat_id }}" \
+          -d text="🚨 <b>FALHA ao criar Pacote Community:</b> ${{ github.event.action }} a partir do branch ${{ github.ref_name }}, <a href='https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}'>link do erro</a> 🖥" \
+          -d parse_mode="HTML"
+
     - name: Capturar hora de término e calcular duração
       shell: bash
       run: |
         # Function to send Telegram message
         source /tmp/send_telegram_message.sh
 
-        STAR_TIME="${{ inputs.start_time }}"
+        START_TIME="${{ inputs.start_time }}"
         START_TIMESTAMP="${{ inputs.start_timestamp }}"
         END_TIME=$(date +"%Y-%m-%d %H:%M:%S")  # Hora completa
         END_TIMESTAMP=$(date +%s)
@@ -734,67 +758,3 @@ runs:
         send_telegram_message "⏳ <b>[step 6/6] Job finalizado em:</b> <code>${hours}h ${minutes}m ${seconds}s</code>
         <b>Inicio:</b> <code>${START_TIME}</code>
         <b>Fim   :</b> <code>${END_TIME}</code>" "HTML"
-
-#    # Runs only if previous steps were successful
-#    - name: Update Repository Database
-#      if: inputs.update_db == 'true' && success()
-#      shell: bash
-#      run: |
-#        # Function to send Telegram message
-#        send_telegram_message() {
-#          message="$1"
-#          curl -s -X POST "https://api.telegram.org/bot${{ inputs.telegram_token }}/sendMessage" \
-#            -d chat_id="${{ inputs.telegram_chat_id }}" \
-#            -d text="$message" \
-#            -d parse_mode="MarkdownV2"
-#        }
-#
-#        # Determine the database name based on the branch type
-#        if [ "${{ inputs.branch_type }}" == "stable" ]; then
-#          branch="STABLE"
-#          db_name="chili-stable"
-#        elif [ "${{ inputs.branch_type }}" == "extra" ]; then
-#          branch="EXTRA"
-#          db_name="chili-extra"
-#        elif [ "${{ inputs.branch_type }}" == "aur" ] || [ "${{ inputs.branch_type }}" == "testing" ]; then
-#          branch="TESTING"
-#          db_name="chili-testing"
-#        else
-#          echo "Error: Unknown branch type: ${{ inputs.branch_type }}"
-#          exit 1
-#        fi
-#
-#        echo "Branch: $branch"
-#        echo "Database name: $db_name"
-#
-#        branch_escaped=$(echo "$branch" | sed 's/[_*[\]()~`>#+\-=|{}.!]/\\&/g')
-#        db_name_escaped=$(echo "$db_name" | sed 's/[_*[\]()~`>#+\-=|{}.!]/\\&/g')
-#
-#        echo "🔄 Sincronizando o banco de dados do repositório $branch..."
-#        #send_telegram_message "🔄 **Iniciando sincronização do banco de dados do repositório** \`$branch_escaped\`"
-#
-#        ssh -v ${{ inputs.repo_user }}@${{ inputs.repo_host }} -p ${{ inputs.repo_port }} << EOF
-#          set -x
-#          cd ${{ inputs.repo_dir }}/${branch,,}/x86_64
-#          repo-add -n -R $db_name.db.tar.gz *.pkg.tar.zst
-#          exit_code=\$?
-#          echo "Comando repo-add concluído com código de saída: \$exit_code"
-#          exit \$exit_code
-#        EOF
-#
-#        if [ $? -eq 0 ]; then
-#          echo "✅ Sincronização do banco de dados concluída com sucesso!"
-#          send_telegram_message "✅ **Sincronização do banco de dados do repositório** \`$branch_escaped\` **concluída com sucesso\!**"
-#        else
-#          echo "❌ Falha na sincronização do banco de dados."
-#          send_telegram_message "❌ **Falha na sincronização do banco de dados do repositório** \`$branch_escaped\`\."
-#        fi
-#
-#    # Send a Telegram alert if the build fails
-#    - name: Telegram Alert Fail
-#      if: failure()
-#      shell: bash
-#      run: |
-#        curl -s -X POST "https://api.telegram.org/bot${{ inputs.telegram_token }}/sendMessage" \
-#          -d chat_id="${{ inputs.telegram_chat_id }}" \
-#          -d text="🚨 FALHA ao criar Pacote: ${{ github.event.action }} a partir do branch ${{ github.ref_name }}, link do erro: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }} 🖥"
