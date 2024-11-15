@@ -754,6 +754,6 @@ runs:
         minutes=$(( (duration % 3600) / 60 ))
         seconds=$((duration % 60))
         echo "Duração total da action: ${hours}h ${minutes}m ${seconds}s"
-        send_telegram_message "⏳ <b>[step 6/6] Job ${GITHUB_RUN_NUMBER} finalizado em:</b> <code>${hours}h ${minutes}m ${seconds}s</code>
+        send_telegram_message "⏳ <b>[step 6/6] Job <code>#${GITHUB_RUN_NUMBER}</code> finalizado em:</b> <code>${hours}h ${minutes}m ${seconds}s</code>
         <b>Inicio:</b> <code>${START_TIME}</code>
         <b>Fim   :</b> <code>${END_TIME}</code>" "HTML"
