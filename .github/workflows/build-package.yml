@@ -37,7 +37,7 @@ on:
   workflow_dispatch:
     inputs:
       branch_type:
-        description: 'Branch type (testing, extra or stable)'
+        description: "Branch type (testing, extra or stable)"
         required: true
         type: choice
         options:
@@ -45,31 +45,31 @@ on:
           - extra
           - stable
       new_branch:
-        description: 'Nome do novo branch'
+        description: "Nome do novo branch"
         required: true
         type: string
       tmate:
         type: boolean
-        description: 'With TMATE'
+        description: "With TMATE"
         required: false
         default: true
       publish_github:
-        description: 'Publish package on GitHub'
+        description: "Publish package on GitHub"
         type: boolean
         required: false
         default: true
       push_to_repo:
-        description: 'Push package to repository'
+        description: "Push package to repository"
         type: boolean
         required: false
         default: true
       update_db:
-        description: 'Update repository database'
+        description: "Update repository database"
         type: boolean
         required: false
         default: true
       extra_command:
-        description: 'Extra command to run before building'
+        description: "Extra command to run before building"
         required: false
         type: string
 

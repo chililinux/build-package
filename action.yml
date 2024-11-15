@@ -206,7 +206,7 @@ runs:
         <b>Origem:</b> <code>${repo_origem}</code>
         <b>Iniciado/Triggered:</b> <code>${started_by_user}/${triggered_by_user}</code>
         <b>path:</b> <code>${repositorio}</code>
-	<b>branch:</b> <code>${branch_escaped}</code>" "HTML"
+        <b>branch:</b> <code>${branch_escaped}</code>" "HTML"
 
     - name: Debug Inputs
       shell: bash
@@ -233,7 +233,7 @@ runs:
           ninja \
           yay \
           tmate \
-	  duf \
+          duf \
           curl \
           tree
 
@@ -271,11 +271,11 @@ runs:
           [community-testing]
           SigLevel = PackageRequired
           Server = https://repo.communitybig.org/testing/$arch
-          
+
           [community-stable]
           SigLevel = PackageRequired
           Server = https://repo.communitybig.org/stable/$arch
-          
+
           [community-extra]
           SigLevel = PackageRequired
           Server = https://repo.communitybig.org/extra/$arch
@@ -297,7 +297,7 @@ runs:
           [community-stable]
           SigLevel = PackageRequired
           Server = https://repo.communitybig.org/stable/$arch
-          
+
           [community-extra]
           SigLevel = PackageRequired
           Server = https://repo.communitybig.org/extra/$arch
@@ -465,7 +465,6 @@ runs:
         echo "Contents of /home/sources:"
         ls -la /home/sources
 
-    # Assina o pacote
     - name: Sign Package
       shell: bash
       run: |
