@@ -100,7 +100,7 @@ jobs:
           TELEGRAM_TOKEN="${{ secrets.TOKEN_BOT }}"
           CHAT_ID="${{ secrets.CHAT_ID }}"
           BRANCH_ORIGEM="${{ github.ref_name }}"
-          REPO_ORIGEM="${{ inputs.url }}"
+          REPO_ORIGEM="${{ env.url }}"
           MESSAGE="🚀 <b>[step 0/6] WORKFLOW INICIADO</b>
           <b>Job :</b> <code>#${GITHUB_RUN_NUMBER}</code>
           <b>Inicio:</b> <code>${{ env.START_TIME }}</code>
