@@ -101,12 +101,14 @@ jobs:
           CHAT_ID="${{ secrets.CHAT_ID }}"
           BRANCH_ORIGEM="${{ github.ref_name }}"
           REPO_ORIGEM="${{ github.event.client_payload.url }}"
+          BRANCH_COMPLETO="${{ github.event.client_payload.branch }}"
           MESSAGE="🚀 <b>[step 0/6] WORKFLOW INICIADO</b>
           <b>Job :</b> <code>#${GITHUB_RUN_NUMBER}</code>
           <b>Inicio:</b> <code>${{ env.START_TIME }}</code>
           <b>Pacote:</b> <code>${{ env.PACKAGE_NAME }}</code>
           <b>Origem:</b> <code>${REPO_ORIGEM}</code>
           <b>Branch:</b> <code>${BRANCH_ORIGEM}</code>
+          <b>Branch completo:</b> <code>${BRANCH_COMPLETO}</code>
           <b>Repositorio:</b> <code>${{ env.BRANCH_TYPE }}</code>"
 
           curl -s -X POST "https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendMessage" \
@@ -214,5 +216,6 @@ jobs:
           extra_command: ${{ github.event.inputs.extra_command }}
 
           # Passando o START_TIME para action.yml
-          start_time: ${{ env.START_TIME }}
-          start_timestamp: ${{ env.START_TIMESTAMP }}
+          start_time: "${{ env.START_TIME }}"
+          start_timestamp: "${{ env.START_TIMESTAMP }}"
+          repo_origem: "${{ github.event.client_payload.url }}"
