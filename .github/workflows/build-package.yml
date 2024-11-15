@@ -101,7 +101,7 @@ jobs:
           CHAT_ID="${{ secrets.CHAT_ID }}"
           MESSAGE="🚀 Workflow iniciado para o pacote *${{ env.PACKAGE_NAME }}* no branch *${{ env.BRANCH_TYPE }}*. Hora de início: ${{ env.START_TIME }}"
 
-          send_telegram_message "🚀 <b>[step 0/6] WORKFLOW INCIADO PARA O PACOTE</b>
+          MESSAGE="🚀 <b>[step 0/6] WORKFLOW INCIADO PARA O PACOTE</b>
           <b>Job :</b> <code>#${GITHUB_RUN_NUMBER}</code>
           <b>Pacote:</b> <code>${{ env.PACKAGE_NAME }}</code>
           <b>Inicio:</b> <code>${{ env.START_TIME }}</code>
