@@ -74,9 +74,14 @@ on:
         type: string
 
 env:
-  BRANCH_TYPE: ${{ github.event.client_payload.branch_type || github.event.inputs.branch_type }}
-  NEW_BRANCH: ${{ github.event.client_payload.branch || github.event.inputs.new_branch }}
-  PACKAGE_NAME: ${{ github.event.action }}
+  BRANCH_TYPE: "${{ github.event.client_payload.branch_type || github.event.inputs.branch_type }}"
+  NEW_BRANCH: "${{ github.event.client_payload.branch || github.event.inputs.new_branch }}"
+  PACKAGE_NAME: "${{ github.event.action }}"
+  TELEGRAM_TOKEN: "${{ secrets.TOKEN_BOT }}"
+  CHAT_ID: "${{ secrets.CHAT_ID }}"
+  BRANCH_ORIGEM: "${{ github.ref_name }}"
+  REPO_ORIGEM: "${{ github.event.client_payload.url }}"
+  BRANCH_FULLNAME: "${{ github.event.client_payload.branch }}"
 
 jobs:
   build:
@@ -97,19 +102,13 @@ jobs:
       - name: Enviar notificação para o Telegram
         shell: bash
         run: |
-          TELEGRAM_TOKEN="${{ secrets.TOKEN_BOT }}"
-          CHAT_ID="${{ secrets.CHAT_ID }}"
-          BRANCH_ORIGEM="${{ github.ref_name }}"
-          REPO_ORIGEM="${{ github.event.client_payload.url }}"
-          BRANCH_COMPLETO="${{ github.event.client_payload.branch }}"
           MESSAGE="🚀 <b>[step 0/6] WORKFLOW INICIADO</b>
-          <b>Job :</b> <code>#${GITHUB_RUN_NUMBER}</code>
-          <b>Inicio:</b> <code>${{ env.START_TIME }}</code>
-          <b>Pacote:</b> <code>${{ env.PACKAGE_NAME }}</code>
-          <b>Origem:</b> <code>${REPO_ORIGEM}</code>
-          <b>Branch:</b> <code>${BRANCH_ORIGEM}</code>
-          <b>Branch completo:</b> <code>${BRANCH_COMPLETO}</code>
-          <b>Repositorio:</b> <code>${{ env.BRANCH_TYPE }}</code>"
+          <b>Job          :</b> <code>#${GITHUB_RUN_NUMBER}</code>
+          <b>Inicio       :</b> <code>${{ env.START_TIME }}</code>
+          <b>Pacote       :</b> <code>${{ env.PACKAGE_NAME }}</code>
+          <b>Repo Origem  :</b> <code>${{ env.REPO_ORIGEM }}</code>
+          <b>Branch origem:</b> <code>${{ env.BRANCH_FULLNAME }}</code>
+          <b>Repositorio  :</b> <code>${{ env.BRANCH_TYPE }}</code>"
 
           curl -s -X POST "https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendMessage" \
             -d chat_id="${CHAT_ID}" \
@@ -219,3 +218,4 @@ jobs:
           start_time: "${{ env.START_TIME }}"
           start_timestamp: "${{ env.START_TIMESTAMP }}"
           repo_origem: "${{ github.event.client_payload.url }}"
+          branch_fullname: "${{ github.event.client_payload.branch }}"
