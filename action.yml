@@ -747,11 +747,13 @@ runs:
       if: failure()
       shell: bash
       run: |
+        source /tmp/send_telegram_message.sh
         # Send a Telegram alert if the build fails
-        curl -s -X POST "https://api.telegram.org/bot${{ inputs.telegram_token }}/sendMessage" \
-          -d chat_id="${{ inputs.telegram_chat_id }}" \
-          -d text="🚨 <b>FALHA ao criar Pacote:</b> ${{ github.event.action }} a partir do branch ${{ github.ref_name }}, <a href='https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}'>link do erro</a> 🖥" \
-          -d parse_mode="HTML"
+
+          send_telegram_message "🚨 <b>FALHA ao criar Pacote:</b>
+          <b>Nome:</b> <code>${{ github.event.action }}</code>
+          <b>Branch:</b> <code>${branch_fullname}</code>
+          <a href='https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}'>link do erro</a> 🖥"" "HTML"
 
     - name: Capturar hora de término e calcular duração
       shell: bash
