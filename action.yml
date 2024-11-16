@@ -732,7 +732,7 @@ runs:
 
         if [ $? -eq 0 ]; then
           echo "✅ Limpeza de pacotes antigos concluída com sucesso!"
-          send_telegram_message "🧹 <b>[step 4/6] Iniciando limpeza de pacotes antigos</b>"
+          send_telegram_message "🧹 <b>[step 4/6] Iniciando limpeza de pacotes antigos</b>
           ✅ <b>[step 5/6] Limpeza de pacotes antigos concluída com êxito</b>" "HTML"
         else
           echo "❌ Falha na limpeza de pacotes antigos."
