@@ -178,6 +178,16 @@ runs:
       run: |
         # Definir a função send_telegram_message no script temporário
         cat << 'EOF' > /tmp/send_telegram_message.sh
+
+        # Definindo variáveis de cores
+        green="\033[01;32m"
+        red="\033[01;31m"
+        blue="\033[01;34m"
+        cyan="\033[01;36m"
+        pink="\033[01;35m"
+        yellow="\033[01;33m"
+        reset="\033[0m"
+
         send_telegram_message() {
           local message="$1"
           local parse_mode="$2"
@@ -699,13 +709,14 @@ runs:
           branch="TESTING"
           db_name="chili-testing"
         else
-          echo "Error: Unknown branch type: ${{ inputs.branch_type }}"
+          echo -e "${red}Error: Unknown branch type: ${{ inputs.branch_type }} ${reset}"
           exit 1
         fi
 
         echo "Branch: $branch"
         echo "Database name: $db_name"
-        branch_escaped=$(echo "$branch" | sed 's/[_*[\]()~`>#+\-=|{}.!]/\\&/g')
+        #branch_escaped=$(echo "$branch" | sed 's/[_*[\]()~`>#+\-=|{}.!]/\\&/g')
+        branch_escaped="$branch"
 
         #echo "🧹 Limpando pacotes antigos no repositório $branch..."
         #send_telegram_message "🧹<b>[step 4/6] Iniciando limpeza de pacotes antigos</b>
@@ -719,7 +730,8 @@ runs:
           PKG_EXT='pkg.tar.zst'
           AllOldPackages=$(find "$PWD" -type f -iname "*.$PKG_EXT" | sort -Vr | awk -F "$FETCH_RE" 'lista[$1]++')
           for old in ${AllOldPackages[@]}; do
-            echo -e "\033[01;31m=>Removendo pacote antigo : [$((++count))]=>${old} ${RESET}"
+            #echo -e "\033[01;31m=>Removendo pacote antigo : [$((++count))]=>${old} ${RESET}"
+            echo -e "${red}=>Removendo pacote antigo : [$((++count))]=>${old} ${reset}"
             rm -fv "${old}" "${old}.sig" "${old}.md5" "${old}.sig.md5"
           done
 
@@ -732,26 +744,32 @@ runs:
           # Remover arquivos .sig, .md5 e .sig.md5 órfãos
           for file in *.sig *.md5 *.sig.md5; do
             base_name=${file%.*}
-            echo -e "\033[01;32m=>Procurando por arquivo orfão : $file ${RESET}"
+            #echo -e "\033[01;32m=>Procurando por arquivo orfão : $file ${RESET}"
+            echo -e "${green}=>Procurando por arquivo orfão : $file ${reset}"
             if [[ ! -f "${base_name}" ]]; then
-              echo -e "\033[01;31m=>Removendo arquivo orfão : $file ${RESET}"
+              #echo -e "\033[01;31m=>Removendo arquivo orfão : $file ${RESET}"
+              echo -e "${red}=>Removendo arquivo orfão : $file ${reset}"
               rm -fv "$file"
             fi
           done
           exit_code=$?
-          echo "Limpeza concluída com código de saída: $exit_code"
+          echo -e "${green}Limpeza concluída com código de saída: $exit_code ${reset}"
           exit $exit_code
         EOF
 
         if [ $? -eq 0 ]; then
-          echo "✅ Limpeza de pacotes antigos concluída com sucesso!"
-          send_telegram_message "🧹 <b>[step 4/6] Iniciando limpeza de pacotes antigos</b>
-          ✅ <b>[step 5/6] Limpeza de pacotes antigos concluída com êxito</b>" "HTML"
+          message="🧹 <b>[step 4/6] Iniciando limpeza de pacotes antigos</b>
+          ✅ <b>[step 5/6] Limpeza de pacotes antigos concluída com êxito</b>"
+          # Remove as tags HTML e exibe o resultado no terminal
+          echo -e "${green}$(sed 's/<[^>]*>//g' <<< "$message")${reset}"
         else
-          echo "❌ Falha na limpeza de pacotes antigos."
-          send_telegram_message "🧹 <b>[step 4/6] Iniciando limpeza de pacotes antigos</b>
-          ❌ <b>[step 5/6] Falha na limpeza de pacotes antigos</b>" "HTML"
+          message "🧹 <b>[step 4/6] Iniciando limpeza de pacotes antigos</b>
+          ❌ <b>[step 5/6] Falha na limpeza de pacotes antigos</b>"
+          # Remove as tags HTML e exibe o resultado no terminal
+          echo -e "${red}$(sed 's/<[^>]*>//g' <<< "$message")${reset}"
         fi
+        # Envia a mensagem original com HTML para o Telegram
+        send_telegram_message "$message" "HTML"
 
     - name: Telegram Alert Fail
       if: failure()
