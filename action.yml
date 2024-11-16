@@ -183,7 +183,8 @@ runs:
           local parse_mode="$2"
 
           # Define parse_mode como "MarkdownV2" se não for especificado
-          [[ -z $parse_mode ]] && parse_mode="MarkdownV2"
+          #[[ -z $parse_mode ]] && parse_mode="MarkdownV2"
+          [[ -z $parse_mode ]] && parse_mode="HTML"
           curl -s -X POST "https://api.telegram.org/bot${{ inputs.telegram_token }}/sendMessage" \
             -d chat_id="${{ inputs.telegram_chat_id }}" \
             -d text="$message" \
@@ -197,22 +198,25 @@ runs:
         # Function to send Telegram message
         source /tmp/send_telegram_message.sh
 
+        #https://docs.github.com/pt/enterprise-server@3.10/actions/writing-workflows/choosing-what-your-workflow-does/accessing-contextual-information-about-workflow-runs
         pkgname="${{ inputs.package_name }}"
         branch="${{ inputs.branch_type }}"
-        repositorio="${{ inputs.repo_dir }}"
+        repo_path="${{ inputs.repo_dir }}"
         repo_origem="${{ inputs.url }}"
-        #https://docs.github.com/pt/enterprise-server@3.10/actions/writing-workflows/choosing-what-your-workflow-does/accessing-contextual-information-about-workflow-runs
         started_by_user="${{ github.actor }}"
         triggered_by_user="${{ github.triggering_actor }}"
-        pkgname_escaped=$(echo "$pkgname" | sed 's/[_*[\]()~`>#+\-=|{}.!]/\\&/g')
-        branch_escaped=$(echo "${branch^^}" | sed 's/[_*[\]()~`>#+\-=|{}.!]/\\&/g')
+        #pkgname_escaped=$(echo "$pkgname" | sed 's/[_*[\]()~`>#+\-=|{}.!]/\\&/g')
+        #branch_escaped=$(echo "${branch^^}" | sed 's/[_*[\]()~`>#+\-=|{}.!]/\\&/g')
+        pkgname_escaped="$pkgname"
+        branch_escaped="${branch}"
 
         send_telegram_message "⭐ <b>[step 1/6] INICIANDO CRIAÇÃO DE PACOTE</b>
+        <b>Job:</b> <code>#${GITHUB_RUN_NUMBER}</code>
         <b>Workflow:</b> <code>action.yml</code>
         <b>Nome:</b> <code>${pkgname_escaped}</code>
         <b>Origem:</b> <code>${repo_origem}</code>
         <b>Iniciado/Triggered:</b> <code>${started_by_user}/${triggered_by_user}</code>
-        <b>path:</b> <code>${repositorio}</code>
+        <b>path:</b> <code>${repo_path}</code>
         <b>branch:</b> <code>${branch_escaped}</code>" "HTML"
 
     - name: Debug Inputs

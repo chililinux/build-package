@@ -106,7 +106,7 @@ jobs:
           triggered_by_user="${{ github.triggering_actor }}"
           repo_path="${{ secrets.PKGBUILD_DIR }}"
 
-          MESSAGE="🚀 <b>[step 0/6] WORKFLOW INICIADO</b>
+          MESSAGE="🚀 <b>[step 0/6] INICIANDO WORKFLOW</b>
           <b>Job:</b> <code>#${GITHUB_RUN_NUMBER}</code>
           <b>Workflow:</b> <code>build-package.yml</code>
           <b>Iniciado/Triggered:</b> <code>${started_by_user}/${triggered_by_user}</code>
