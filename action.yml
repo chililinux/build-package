@@ -648,12 +648,12 @@ runs:
 
           if rsync -vapz -e "ssh -p ${{ inputs.repo_port }}" $i ${{ inputs.repo_user }}@$ip:${{ inputs.repo_dir }}/${branch,,}/x86_64/; then
             send_telegram_message "✅ <b>[step 3/6] Pacote enviado com sucesso<b>
-            <b>Pacote:<b> <code>$pkgname_escaped</code>
-            <b>Repositório:</b> <code>$branch_escaped<code>" "HTML"
+            <b>Pacote:<b> <code>${pkgname_escaped}</code>
+            <b>Repositório:</b> <code>${branch_escaped}<code>" "HTML"
           else
             send_telegram_message "❌ <b>[step 3/6] Falha ao enviar pacote<b>
-            <b>Pacote:<b> <code>$pkgname_escaped</code>
-            <b>Repositório:</b> <code>$branch_escaped<code>" "HTML"
+            <b>Pacote:<b> <code>${pkgname_escaped}</code>
+            <b>Repositório:</b> <code>${branch_escaped}<code>" "HTML"
           fi
         done
 
@@ -726,8 +726,8 @@ runs:
 
         if [ $? -eq 0 ]; then
           echo "✅ Limpeza de pacotes antigos concluída com sucesso!"
-          send_telegram_message "🧹 <b>[step 4/6] Iniciando limpeza de pacotes antigos</b>\n" \
-          "✅ <b>[step 5/6] Limpeza de pacotes antigos concluída com êxito</b>" "HTML"
+          send_telegram_message "🧹 <b>[step 4/6] Iniciando limpeza de pacotes antigos</b>"
+          ✅ <b>[step 5/6] Limpeza de pacotes antigos concluída com êxito</b>" "HTML"
         else
           echo "❌ Falha na limpeza de pacotes antigos."
           send_telegram_message "🧹 <b>[step 4/6] Iniciando limpeza de pacotes antigos</b>
