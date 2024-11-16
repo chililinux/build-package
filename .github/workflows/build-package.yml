@@ -114,8 +114,8 @@ jobs:
           <b>Nome:</b> <code>${{ env.PACKAGE_NAME }}</code>
           <b>Repo Origem:</b> <code>${{ env.REPO_ORIGEM }}</code>
           <b>Branch origem:</b> <code>${{ env.BRANCH_FULLNAME }}</code>
-          <b>Path:</b> <code>${repo_path}</code>
-          <b>Repositorio:</b> <code>${{ env.BRANCH_TYPE }}</code>"
+          <b>Repositório:</b> <code>${repo_path}</code>
+          <b>Branch:</b> <code>${{ env.BRANCH_TYPE }}</code>"
 
           curl -s -X POST "https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendMessage" \
             -d chat_id="${CHAT_ID}" \

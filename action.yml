@@ -216,7 +216,6 @@ runs:
         <b>Nome:</b> <code>${pkgname_escaped}</code>
         <b>Origem:</b> <code>${repo_origem}</code>
         <b>Iniciado/Triggered:</b> <code>${started_by_user}/${triggered_by_user}</code>
-        <b>path:</b> <code>${repo_path}</code>
         <b>branch:</b> <code>${branch_escaped}</code>" "HTML"
 
     - name: Debug Inputs
@@ -644,28 +643,37 @@ runs:
         # Upload the package files
         for i in *.pkg.tar.zst; do
           pkgname=$(basename "$i")
-          pkgname_escaped=$(echo "$pkgname" | sed 's/[_*[\]()~`>#+\-=|{}.!]/\\&/g')
-          branch_escaped=$(echo "$branch" | sed 's/[_*[\]()~`>#+\-=|{}.!]/\\&/g')
-          repositorio="${{ inputs.repo_dir }}"
+          #pkgname_escaped=$(echo "$pkgname" | sed 's/[_*[\]()~`>#+\-=|{}.!]/\\&/g')
+          #branch_escaped=$(echo "$branch" | sed 's/[_*[\]()~`>#+\-=|{}.!]/\\&/g')
+          pkgname_escaped="$pkgname"
+          branch_escaped="$branch"
+          repo_path="${{ inputs.repo_dir }}"
           file_size_bytes=$(stat -c%s "$i")
           file_size_kb=$((file_size_bytes / 1024))
 
-          echo "Pacote $pkgname sendo enviado para o repositório ${branch,,}"
-          send_telegram_message "📦 <b>[step 2/6] ENVIANDO PARA REPOSITÓRIO</b>
+          message="📦 <b>[step 2/6] ENVIANDO PARA REPOSITÓRIO</b>
           <b>Pacote:</b> <code>${pkgname_escaped}</code>
           <b>Tamanho bytes/kb:</b> <code>${file_size_bytes}/${file_size_kb}k</code>
-          <b>Url:</b> <code>${repositorio}</code>
-          <b>branch:</b> <code>${branch_escaped}</code>" "HTML"
+          <b>Repositório:</b> <code>${repo_path}</code>
+          <b>Branch:</b> <code>${branch_escaped}</code>"
+          # Remove as tags HTML e exibe o resultado
+          echo "$(sed 's/<[^>]*>//g' <<< "$message")"
+          # Envia a mensagem original com HTML
+          send_telegram_message "$message" "HTML"
 
           if rsync -vapz -e "ssh -p ${{ inputs.repo_port }}" $i ${{ inputs.repo_user }}@$ip:${{ inputs.repo_dir }}/${branch,,}/x86_64/; then
-            send_telegram_message "✅ <b>[step 3/6] Pacote enviado com sucesso</b>
+            message="✅ <b>[step 3/6] Sucesso no envio do pacote</b>
             <b>Pacote:</b> <code>${pkgname_escaped}</code>
-            <b>Repositório:</b> <code>${branch_escaped}</code>" "HTML"
+            <b>Branch:</b> <code>${branch_escaped}</code>"
           else
-            send_telegram_message "❌ <b>[step 3/6] Falha ao enviar pacote</b>
+            message="❌ <b>[step 3/6] Falha ao enviar pacote</b>
             <b>Pacote:</b> <code>${pkgname_escaped}</code>
-            <b>Repositório:</b> <code>${branch_escaped}</code>" "HTML"
+            <b>Branch:</b> <code>${branch_escaped}</code>"
           fi
+          # Remove as tags HTML e exibe o resultado
+          echo "$(sed 's/<[^>]*>//g' <<< "$message")"
+          # Envia a mensagem original com HTML
+          send_telegram_message "$message" "HTML"
         done
 
         for i in *.sig *.md5; do
