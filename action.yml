@@ -640,17 +640,16 @@ runs:
           file_size_kb=$((file_size_bytes / 1024))
 
           echo "Pacote $pkgname sendo enviado para o repositório ${branch,,}"
-          send_telegram_message "📦 <b>[step 2/6] ENVIANDO PACOTE PARA REPOSITÓRIO</b>
+          send_telegram_message "📦 <b>[step 2/6] ENVIANDO PARA REPOSITÓRIO</b>
           <b>Pacote:</b> <code>${pkgname_escaped}</code>
           <b>Tamanho bytes/kb:</b> <code>${file_size_bytes}/${file_size_kb}k</code>
           <b>Url:</b> <code>${repositorio}</code>
           <b>branch:</b> <code>${branch_escaped}</code>" "HTML"
 
           if rsync -vapz -e "ssh -p ${{ inputs.repo_port }}" $i ${{ inputs.repo_user }}@$ip:${{ inputs.repo_dir }}/${branch,,}/x86_64/; then
-            #send_telegram_message "✅ <b>[step 3/6] Pacote enviado com sucesso<b>
-            #<b>Pacote:<b> <code>$pkgname_escaped</code>
-            #<b>Repositório:</b> <code>$branch_escaped<code>" "HTML"
-            :
+            send_telegram_message "✅ <b>[step 3/6] Pacote enviado com sucesso<b>
+            <b>Pacote:<b> <code>$pkgname_escaped</code>
+            <b>Repositório:</b> <code>$branch_escaped<code>" "HTML"
           else
             send_telegram_message "❌ <b>[step 3/6] Falha ao enviar pacote<b>
             <b>Pacote:<b> <code>$pkgname_escaped</code>
@@ -727,8 +726,8 @@ runs:
 
         if [ $? -eq 0 ]; then
           echo "✅ Limpeza de pacotes antigos concluída com sucesso!"
-          send_telegram_message "🧹 <b>[step 4/6] Iniciando limpeza de pacotes antigos</b>
-          ✅ <b>[step 5/6] Limpeza de pacotes antigos concluída com êxito</b>" "HTML"
+          send_telegram_message "🧹 <b>[step 4/6] Iniciando limpeza de pacotes antigos</b>\n" \
+          "✅ <b>[step 5/6] Limpeza de pacotes antigos concluída com êxito</b>" "HTML"
         else
           echo "❌ Falha na limpeza de pacotes antigos."
           send_telegram_message "🧹 <b>[step 4/6] Iniciando limpeza de pacotes antigos</b>
