@@ -102,12 +102,19 @@ jobs:
       - name: Enviar notificação para o Telegram
         shell: bash
         run: |
+          started_by_user="${{ github.actor }}"
+          triggered_by_user="${{ github.triggering_actor }}"
+          repositorio="${{ inputs.repo_dir }}"
+
           MESSAGE="🚀 <b>[step 0/6] WORKFLOW INICIADO</b>
+          <b>Workflow:</b> <code>build-package.yml</code>
           <b>Job:</b> <code>#${GITHUB_RUN_NUMBER}</code>
+          <b>Iniciado/Triggered:</b> <code>${started_by_user}/${triggered_by_user}</code>
           <b>Inicio:</b> <code>${{ env.START_TIME }}</code>
           <b>Nome:</b> <code>${{ env.PACKAGE_NAME }}</code>
           <b>Repo Origem:</b> <code>${{ env.REPO_ORIGEM }}</code>
           <b>Branch origem:</b> <code>${{ env.BRANCH_FULLNAME }}</code>
+          <b>Path:</b> <code>${repositorio}</code>
           <b>Repositorio:</b> <code>${{ env.BRANCH_TYPE }}</code>"
 
           curl -s -X POST "https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendMessage" \

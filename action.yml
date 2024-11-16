@@ -208,6 +208,7 @@ runs:
         branch_escaped=$(echo "${branch^^}" | sed 's/[_*[\]()~`>#+\-=|{}.!]/\\&/g')
 
         send_telegram_message "⭐ <b>[step 1/6] INICIANDO CRIAÇÃO DE PACOTE</b>
+        <b>Workflow:</b> <code>action.yml</code>
         <b>Nome:</b> <code>${pkgname_escaped}</code>
         <b>Origem:</b> <code>${repo_origem}</code>
         <b>Iniciado/Triggered:</b> <code>${started_by_user}/${triggered_by_user}</code>
