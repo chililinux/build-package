@@ -141,9 +141,6 @@ inputs:
   repo_origem:
     description: "Repositorio origem"
     required: false
-  repo_origem:
-    description: "Repositorio origem"
-    required: false
   branch_fullname:
     description: "Nome completo do branch de origem"
     required: false
