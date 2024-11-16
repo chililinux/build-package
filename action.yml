@@ -178,15 +178,14 @@ runs:
       run: |
         # Definir a função send_telegram_message no script temporário
         cat << 'EOF' > /tmp/send_telegram_message.sh
-
         # Definindo variáveis de cores
-        green="\033[01;32m"
-        red="\033[01;31m"
-        blue="\033[01;34m"
-        cyan="\033[01;36m"
-        pink="\033[01;35m"
-        yellow="\033[01;33m"
-        reset="\033[0m"
+        export green="\033[01;32m"
+        export red="\033[01;31m"
+        export blue="\033[01;34m"
+        export cyan="\033[01;36m"
+        export pink="\033[01;35m"
+        export yellow="\033[01;33m"
+        export reset="\033[0m"
 
         send_telegram_message() {
           local message="$1"
@@ -200,6 +199,7 @@ runs:
             -d text="$message" \
             -d parse_mode="$parse_mode"
         }
+        export -f send_telegram_message
         EOF
 
     - name: Inicializando criação de pacote
@@ -226,7 +226,7 @@ runs:
         <b>Nome:</b> <code>${pkgname_escaped}</code>
         <b>Origem:</b> <code>${repo_origem}</code>
         <b>Iniciado/Triggered:</b> <code>${started_by_user}/${triggered_by_user}</code>
-        <b>branch:</b> <code>${branch_escaped}</code>" "HTML"
+        <b>Branch:</b> <code>${branch_escaped}</code>" "HTML"
 
     - name: Debug Inputs
       shell: bash
@@ -744,16 +744,14 @@ runs:
           # Remover arquivos .sig, .md5 e .sig.md5 órfãos
           for file in *.sig *.md5 *.sig.md5; do
             base_name=${file%.*}
-            #echo -e "\033[01;32m=>Procurando por arquivo orfão : $file ${RESET}"
-            echo -e "${green}=>Procurando por arquivo orfão : $file ${reset}"
+            echo -e "\033[01;32m=>Procurando por arquivo orfão : $file ${RESET}"
             if [[ ! -f "${base_name}" ]]; then
-              #echo -e "\033[01;31m=>Removendo arquivo orfão : $file ${RESET}"
-              echo -e "${red}=>Removendo arquivo orfão : $file ${reset}"
+              echo -e "\033[01;31m=>Removendo arquivo orfão : $file ${RESET}"
               rm -fv "$file"
             fi
           done
           exit_code=$?
-          echo -e "${green}Limpeza concluída com código de saída: $exit_code ${reset}"
+          echo -e "Limpeza concluída com código de saída: ${exit_code}"
           exit $exit_code
         EOF
 
@@ -777,11 +775,14 @@ runs:
       run: |
         source /tmp/send_telegram_message.sh
         # Send a Telegram alert if the build fails
-
-          send_telegram_message "🚨 <b>FALHA ao criar Pacote:</b>
-          <b>Nome:</b> <code>${{ github.event.action }}</code>
-          <b>Branch:</b> <code>${branch_fullname}</code>
-          <a href='https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}'>link do erro</a> 🖥"" "HTML"
+        message="🚨 <b>FALHA ao criar Pacote:</b>
+        <b>Nome:</b> <code>${{ github.event.action }}</code>
+        <b>Branch:</b> <code>${branch_fullname}</code>
+        <a href='https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}'>link do erro</a> 🖥""
+        # Remove as tags HTML e exibe o resultado no terminal
+        echo -e "${red}$(sed 's/<[^>]*>//g' <<< "$message")${reset}"
+        # Envia a mensagem original com HTML para o Telegram
+        send_telegram_message "$message" "HTML"
 
     - name: Capturar hora de término e calcular duração
       shell: bash
@@ -799,6 +800,10 @@ runs:
         minutes=$(( (duration % 3600) / 60 ))
         seconds=$((duration % 60))
         echo "Duração total da action: ${hours}h ${minutes}m ${seconds}s"
-        send_telegram_message "⏳ <b>[step 6/6] Job <code>#${GITHUB_RUN_NUMBER}</code> finalizado em:</b> <code>${hours}h ${minutes}m ${seconds}s</code>
+        message="⏳ <b>[step 6/6] Job <code>#${GITHUB_RUN_NUMBER}</code> finalizado em:</b> <code>${hours}h ${minutes}m ${seconds}s</code>
         <b>Inicio:</b> <code>${START_TIME}</code>
-        <b>Fim   :</b> <code>${END_TIME}</code>" "HTML"
+        <b>Fim   :</b> <code>${END_TIME}</code>"
+        # Remove as tags HTML e exibe o resultado no terminal
+        echo -e "${green}$(sed 's/<[^>]*>//g' <<< "$message")${reset}"
+        # Envia a mensagem original com HTML para o Telegram
+        send_telegram_message "$message" "HTML"
