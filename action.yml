@@ -682,11 +682,11 @@ runs:
 
         echo "Branch: $branch"
         echo "Database name: $db_name"
-
         branch_escaped=$(echo "$branch" | sed 's/[_*[\]()~`>#+\-=|{}.!]/\\&/g')
 
-        echo "🧹 Limpando pacotes antigos no repositório $branch..."
-        send_telegram_message "🧹 **\[step 4/6\] Iniciando limpeza de pacote antigos**%0A**repositório : ** \`$branch_escaped\`"
+        #echo "🧹 Limpando pacotes antigos no repositório $branch..."
+        #send_telegram_message "🧹<b>[step 4/6] Iniciando limpeza de pacotes antigos</b>
+        #<b>branch:</b> <code>${branch_escaped}</code>" "HTML"
 
         ssh "${{ inputs.repo_user }}@${{ inputs.repo_host }}" -p "${{ inputs.repo_port }}" << 'EOF'
           cd "${{ inputs.repo_dir }}/${{ inputs.branch_type }}/x86_64"
@@ -722,10 +722,12 @@ runs:
 
         if [ $? -eq 0 ]; then
           echo "✅ Limpeza de pacotes antigos concluída com sucesso!"
-          send_telegram_message "✅ **\[step 5/6\] Limpeza de pacotes antigos concluída com êxito"
+          send_telegram_message "🧹<b>[step 4/6] Iniciando limpeza de pacotes antigos</b>
+          ✅ <b>[step 5/6] Limpeza de pacotes antigos concluída com êxito</b>" "HTML"
         else
           echo "❌ Falha na limpeza de pacotes antigos."
-          send_telegram_message "❌ **\[step 5/6\] Falha na limpeza de pacotes antigos"
+          send_telegram_message "🧹<b>[step 4/6] Iniciando limpeza de pacotes antigos</b>
+          ❌ <b>[step 5/6] Falha na limpeza de pacotes antigos</b>" "HTML"
         fi
 
     # Send a Telegram alert if the build fails
