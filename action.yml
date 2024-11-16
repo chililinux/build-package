@@ -138,6 +138,15 @@ inputs:
   start_timestamp:
     description: "Timestamp de início do workflow"
     required: false
+  repo_origem:
+    description: "Repositorio origem"
+    required: false
+  repo_origem:
+    description: "Repositorio origem"
+    required: false
+  branch_fullname:
+    description: "Nome completo do branch de origem"
+    required: false
 
 # Definição dos passos da ação
 runs:
@@ -734,14 +743,14 @@ runs:
           ❌ <b>[step 5/6] Falha na limpeza de pacotes antigos</b>" "HTML"
         fi
 
-    # Send a Telegram alert if the build fails
     - name: Telegram Alert Fail
       if: failure()
       shell: bash
       run: |
+        # Send a Telegram alert if the build fails
         curl -s -X POST "https://api.telegram.org/bot${{ inputs.telegram_token }}/sendMessage" \
           -d chat_id="${{ inputs.telegram_chat_id }}" \
-          -d text="🚨 <b>FALHA ao criar Pacote Community:</b> ${{ github.event.action }} a partir do branch ${{ github.ref_name }}, <a href='https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}'>link do erro</a> 🖥" \
+          -d text="🚨 <b>FALHA ao criar Pacote:</b> ${{ github.event.action }} a partir do branch ${{ github.ref_name }}, <a href='https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}'>link do erro</a> 🖥" \
           -d parse_mode="HTML"
 
     - name: Capturar hora de término e calcular duração
