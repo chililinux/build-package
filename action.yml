@@ -207,7 +207,7 @@ runs:
       run: |
         #Get the latest commit hash from remote repository
         REPO_URL="${{ inputs.url }}"
-        COMMIT_HASH=$(git ls-remote $REPO_URL HEAD | awk '{print $1}')
+        COMMIT_HASH="$(git ls-remote $REPO_URL HEAD | awk '{print $1}')"
         echo "COMMIT_HASH=$COMMIT_HASH" >> $GITHUB_ENV
         echo "Last commit hash: $COMMIT_HASH"
 
@@ -215,7 +215,7 @@ runs:
       shell: bash
       run: |
         #Get the commit message from the remote repository
-        COMMIT_MESSAGE=$(git log -1 --format=%B $COMMIT_HASH)
+        COMMIT_MESSAGE="$(git log -1 --format=%B "$COMMIT_HASH")"
         echo "COMMIT_MESSAGE=$COMMIT_MESSAGE" >> $GITHUB_ENV
         echo "Last commit message: $COMMIT_MESSAGE"
 
