@@ -202,6 +202,23 @@ runs:
         export -f send_telegram_message
         EOF
 
+    - name: Get the latest commit hash from remote repository
+      shell: bash
+      run: |
+        #Get the latest commit hash from remote repository
+        REPO_URL="${{ inputs.url }}"
+        COMMIT_HASH=$(git ls-remote $REPO_URL HEAD | awk '{print $1}')
+        echo "COMMIT_HASH=$COMMIT_HASH" >> $GITHUB_ENV
+        echo "Last commit hash: $COMMIT_HASH"
+
+    - name: Get the commit message from the remote repository
+      shell: bash
+      run: |
+        #Get the commit message from the remote repository
+        COMMIT_MESSAGE=$(git log -1 --format=%B $COMMIT_HASH)
+        echo "COMMIT_MESSAGE=$COMMIT_MESSAGE" >> $GITHUB_ENV
+        echo "Last commit message: $COMMIT_MESSAGE"
+
     - name: Inicializando criação de pacote
       shell: bash
       run: |
@@ -224,6 +241,7 @@ runs:
         <b>Job:</b> <code>#${GITHUB_RUN_NUMBER}</code>
         <b>Workflow:</b> <code>action.yml</code>
         <b>Nome:</b> <code>${pkgname_escaped}</code>
+        <b>Commit:</b> <code>${COMMIT_MESSAGE}</code>
         <b>Origem:</b> <code>${repo_origem}</code>
         <b>Iniciado/Triggered:</b> <code>${started_by_user}/${triggered_by_user}</code>
         <b>Branch:</b> <code>${branch_escaped}</code>" "HTML"
@@ -667,7 +685,7 @@ runs:
           <b>Repositório:</b> <code>${repo_path}</code>
           <b>Branch:</b> <code>${branch_escaped}</code>"
           # Remove as tags HTML e exibe o resultado
-          echo "$(sed 's/<[^>]*>//g' <<< "$message")"
+          echo "${yellow}$(sed 's/<[^>]*>//g' <<< "$message")${reset}"
           # Envia a mensagem original com HTML
           send_telegram_message "$message" "HTML"
 
@@ -675,13 +693,15 @@ runs:
             message="✅ <b>[step 3/6] Sucesso no envio do pacote</b>
             <b>Pacote:</b> <code>${pkgname_escaped}</code>
             <b>Branch:</b> <code>${branch_escaped}</code>"
+            # Remove as tags HTML e exibe o resultado
+            echo -e "${green}$(sed 's/<[^>]*>//g' <<< "$message")${reset}"
           else
             message="❌ <b>[step 3/6] Falha ao enviar pacote</b>
             <b>Pacote:</b> <code>${pkgname_escaped}</code>
             <b>Branch:</b> <code>${branch_escaped}</code>"
+            # Remove as tags HTML e exibe o resultado
+            echo -e "${red}$(sed 's/<[^>]*>//g' <<< "$message")${reset}"
           fi
-          # Remove as tags HTML e exibe o resultado
-          echo "$(sed 's/<[^>]*>//g' <<< "$message")"
           # Envia a mensagem original com HTML
           send_telegram_message "$message" "HTML"
         done
@@ -799,7 +819,7 @@ runs:
         hours=$((duration / 3600))
         minutes=$(( (duration % 3600) / 60 ))
         seconds=$((duration % 60))
-        echo "Duração total da action: ${hours}h ${minutes}m ${seconds}s"
+
         message="⏳ <b>[step 6/6] Job <code>#${GITHUB_RUN_NUMBER}</code> finalizado em:</b> <code>${hours}h ${minutes}m ${seconds}s</code>
         <b>Inicio:</b> <code>${START_TIME}</code>
         <b>Fim   :</b> <code>${END_TIME}</code>"
