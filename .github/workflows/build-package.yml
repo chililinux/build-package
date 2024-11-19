@@ -2,7 +2,7 @@
 #
 #  build-package.yml
 #  Created: 2024/09/15 - 08:10
-#  Altered: 2024/10/27 - 12:26
+#  Altered: 2024/11/19 - 01:10
 #
 #  Copyright (c) 2024-2024, Vilmar Catafesta <vcatafesta@gmail.com>
 #  All rights reserved.
@@ -106,9 +106,9 @@ jobs:
           triggered_by_user="${{ github.triggering_actor }}"
           repo_path="${{ secrets.PKGBUILD_DIR }}"
 
-          MESSAGE="🚀 <b>[step 0/6] INICIANDO WORKFLOW</b>
+          MESSAGE="🚀 <b>[step 0/6] build-package - INICIANDO WORKFLOW</b>
           <b>Job:</b> <code>#${GITHUB_RUN_NUMBER}</code>
-          <b>Workflow:</b> <code>build-package.yml</code>
+          <b>Workflow:</b> <code>build-package/build-package.yml</code>
           <b>Iniciado/Triggered:</b> <code>${started_by_user}/${triggered_by_user}</code>
           <b>Inicio:</b> <code>${{ env.START_TIME }}</code>
           <b>Nome:</b> <code>${{ env.PACKAGE_NAME }}</code>
