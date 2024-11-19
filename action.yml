@@ -237,9 +237,9 @@ runs:
         pkgname_escaped="$pkgname"
         branch_escaped="${branch}"
 
-        send_telegram_message "⭐ <b>[step 1/6] INICIANDO CRIAÇÃO DE PACOTE</b>
+        send_telegram_message "⭐ <b>[step 1/6] build-package - INICIANDO CRIAÇÃO DE PACOTE</b>
         <b>Job:</b> <code>#${GITHUB_RUN_NUMBER}</code>
-        <b>Workflow:</b> <code>action.yml</code>
+        <b>Workflow:</b> <code>build-package/action.yml</code>
         <b>Nome:</b> <code>${pkgname_escaped}</code>
         <b>Commit:</b> <code>${COMMIT_MESSAGE}</code>
         <b>Origem:</b> <code>${repo_origem}</code>
@@ -679,7 +679,9 @@ runs:
           file_size_bytes=$(stat -c%s "$i")
           file_size_kb=$((file_size_bytes / 1024))
 
-          message="📦 <b>[step 2/6] ENVIANDO PARA REPOSITÓRIO</b>
+          message="📦 <b>[step 2/6] build-package - ENVIANDO PARA REPOSITÓRIO</b>
+          <b>Job:</b> <code>#${GITHUB_RUN_NUMBER}</code>
+          <b>Workflow:</b> <code>build-package/action.yml</code>
           <b>Pacote:</b> <code>${pkgname_escaped}</code>
           <b>Tamanho bytes/kb:</b> <code>${file_size_bytes}/${file_size_kb}k</code>
           <b>Repositório:</b> <code>${repo_path}</code>
@@ -690,13 +692,17 @@ runs:
           send_telegram_message "$message" "HTML"
 
           if rsync -vapz -e "ssh -p ${{ inputs.repo_port }}" $i ${{ inputs.repo_user }}@$ip:${{ inputs.repo_dir }}/${branch,,}/x86_64/; then
-            message="✅ <b>[step 3/6] Sucesso no envio do pacote</b>
+            message="✅ <b>[step 3/6] build-package - Sucesso no envio do pacote</b>
+            <b>Job:</b> <code>#${GITHUB_RUN_NUMBER}</code>
+            <b>Workflow:</b> <code>build-package/action.yml</code>
             <b>Pacote:</b> <code>${pkgname_escaped}</code>
             <b>Branch:</b> <code>${branch_escaped}</code>"
             # Remove as tags HTML e exibe o resultado
             echo -e "${green}$(sed 's/<[^>]*>//g' <<< "$message")${reset}"
           else
-            message="❌ <b>[step 3/6] Falha ao enviar pacote</b>
+            message="❌ <b>[step 3/6] build-package - Falha ao enviar pacote</b>
+            <b>Job:</b> <code>#${GITHUB_RUN_NUMBER}</code>
+            <b>Workflow:</b> <code>build-package/action.yml</code>
             <b>Pacote:</b> <code>${pkgname_escaped}</code>
             <b>Branch:</b> <code>${branch_escaped}</code>"
             # Remove as tags HTML e exibe o resultado
@@ -776,13 +782,17 @@ runs:
         EOF
 
         if [ $? -eq 0 ]; then
-          message="🧹 <b>[step 4/6] Iniciando limpeza de pacotes antigos</b>
-          ✅ <b>[step 5/6] Limpeza de pacotes antigos concluída com êxito</b>"
+          message="🧹 <b>[step 4/6] build-package - INICIANDO LIMPEZA DE PACOTES ANTIGOS</b>
+          ✅ <b>[step 5/6] Limpeza de pacotes antigos concluída com êxito</b>
+          <b>Job:</b> <code>#${GITHUB_RUN_NUMBER}</code>
+          <b>Workflow:</b> <code>build-package/action.yml</code>"
           # Remove as tags HTML e exibe o resultado no terminal
           echo -e "${green}$(sed 's/<[^>]*>//g' <<< "$message")${reset}"
         else
-          message "🧹 <b>[step 4/6] Iniciando limpeza de pacotes antigos</b>
-          ❌ <b>[step 5/6] Falha na limpeza de pacotes antigos</b>"
+          message="🧹 <b>[step 4/6] build-package - INICIANDO LIMPEZA DE PACOTES ANTIGOS</b>
+          ❌ <b>[step 5/6] Falha na limpeza de pacotes antigos</b>
+          <b>Job:</b> <code>#${GITHUB_RUN_NUMBER}</code>
+          <b>Workflow:</b> <code>build-package/action.yml</code>"
           # Remove as tags HTML e exibe o resultado no terminal
           echo -e "${red}$(sed 's/<[^>]*>//g' <<< "$message")${reset}"
         fi
@@ -796,6 +806,8 @@ runs:
         source /tmp/send_telegram_message.sh
         # Send a Telegram alert if the build fails
         message="🚨 <b>FALHA ao criar Pacote:</b>
+        <b>Job:</b> <code>#${GITHUB_RUN_NUMBER}</code>
+        <b>Workflow:</b> <code>build-package/action.yml</code>
         <b>Nome:</b> <code>${{ github.event.action }}</code>
         <b>Branch:</b> <code>${branch_fullname}</code>
         <a href='https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}'>link do erro</a> 🖥""
@@ -821,6 +833,8 @@ runs:
         seconds=$((duration % 60))
 
         message="⏳ <b>[step 6/6] Job <code>#${GITHUB_RUN_NUMBER}</code> finalizado em:</b> <code>${hours}h ${minutes}m ${seconds}s</code>
+        <b>Job:</b> <code>#${GITHUB_RUN_NUMBER}</code>
+        <b>Workflow:</b> <code>build-package/action.yml</code>
         <b>Inicio:</b> <code>${START_TIME}</code>
         <b>Fim   :</b> <code>${END_TIME}</code>"
         # Remove as tags HTML e exibe o resultado no terminal
