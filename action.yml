@@ -470,7 +470,8 @@ runs:
           cd $gitfolder
 
           make_with_makepkg() {
-            makepkg -s --noconfirm --nodeps
+            #makepkg -s --noconfirm --nodeps
+            makepkg --noprogressbar --nodeps
           }
 
           make_with_chrootbuild() {
