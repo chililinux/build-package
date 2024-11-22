@@ -324,8 +324,10 @@ runs:
       shell: bash
       run: |
         # Set up pacman mirror
-        echo "Usando mirror especificado: ${{ inputs.pacman_mirror }}"
+        msg "Usando mirror especificado: ${{ inputs.pacman_mirror }}"
         echo 'Server = ${{ inputs.pacman_mirror }}' | sudo tee /etc/pacman.d/mirrorlist
+        echo 'Server = https://linorg.usp.br/manjaro/testing/$repo/$arch' | sudo tee /etc/pacman.d/mirrorlist
+        echo 'Server = https://manjaro.c3sl.ufpr.br/testing/$repo/$arch' | sudo tee /etc/pacman.d/mirrorlist
 
         # Remove existing BigLinux repositories
         sudo sed -i '/biglinux/,$d' /etc/pacman.conf
