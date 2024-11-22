@@ -325,11 +325,17 @@ runs:
     - name: Configure System and Repositories
       shell: bash
       run: |
-        # Set up pacman mirror
+        #Configure System and Repositories
+        #Set up pacman mirror
         msg "Usando mirror especificado: ${{ inputs.pacman_mirror }}"
-        echo 'Server = ${{ inputs.pacman_mirror }}' | sudo tee /etc/pacman.d/mirrorlist
-        echo 'Server = https://linorg.usp.br/manjaro/testing/$repo/$arch' | sudo tee /etc/pacman.d/mirrorlist
-        echo 'Server = https://manjaro.c3sl.ufpr.br/testing/$repo/$arch' | sudo tee /etc/pacman.d/mirrorlist
+        echo 'Server = ${{ inputs.pacman_mirror }}' | sudo tee -a /etc/pacman.d/mirrorlist
+        echo 'Server = https://linorg.usp.br/manjaro/testing/$repo/$arch' | sudo tee -a /etc/pacman.d/mirrorlist
+        echo 'Server = https://manjaro.c3sl.ufpr.br/testing/$repo/$arch' | sudo tee -a /etc/pacman.d/mirrorlist
+
+        #Exibe /etc/pacman.d/mirrorlist
+        echo "$red"
+        cat /etc/pacman.d/mirrorlist
+        echo "${reset}"
 
         # Remove existing BigLinux repositories
         sudo sed -i '/biglinux/,$d' /etc/pacman.conf
