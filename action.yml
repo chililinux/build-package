@@ -187,6 +187,29 @@ runs:
         export yellow="\033[01;33m"
         export reset="\033[0m"
 
+        msg() {
+          local msg="$1"
+          echo "build-package=>${cyan}running: ${yellow}${msg}${reset}"
+        }
+
+        msg_info() {
+          local msg="$1"
+          echo "build-package=>${yellow}info   : ${cyan}${msg}${reset}"
+        }
+
+        msg_warning() {
+          local msg="$1"
+          echo "build-package=>${red}warning: ${orange}${msg}${reset}"
+        }
+
+        replicate() {
+          local char=${1:-'#'}
+          local nsize=${2:-$(tput cols)}
+          local line
+          printf -v line "%*s" "$nsize" && echo "${line// /$char}"
+        }
+        export -f replicate
+
         send_telegram_message() {
           local message="$1"
           local parse_mode="$2"
@@ -202,6 +225,7 @@ runs:
             -d text="$message" \
             -d parse_mode="$parse_mode"
         }
+        export -f send_telegram_message
         EOF
 
     - name: Get the latest commit hash/message from remote repository
@@ -409,23 +433,26 @@ runs:
         echo "Directory contents:"
         ls -la
 
-    # Constrói o pacote
     - name: Build package
       shell: bash
       run: |
+        # Build package - Construr pacote
         set -ex  # Isso fará o script falhar se qualquer comando falhar
-        # Debug: Mostrar ambiente de build
-        echo "Build environment: ${{ inputs.build_env }}"
-        echo "Package name: ${{ inputs.package_name }}"
+        # Function to send Telegram message
+        source /tmp/send_telegram_message.sh
 
-         # Se entramos em um diretório no passo anterior, vamos garantir que estamos nele
+        # Debug: Mostrar ambiente de build
+        msg_info "Build environment: ${{ inputs.build_env }}"
+        msg_info "Package name: ${{ inputs.package_name }}"
+
+        # Se entramos em um diretório no passo anterior, vamos garantir que estamos nele
         if [ -d "source_repo" ]; then
           cd source_repo
         fi
 
         # Debug: Mostrar diretório atual e conteúdo
-        echo "Current directory: $(pwd)"
-        echo "Directory contents:"
+        msg_info "Current directory: $(pwd)"
+        msg_info "Directory contents:"
         ls -la
 
         # Create and set permissions for $PKGDEST and $SRCDEST
@@ -435,9 +462,9 @@ runs:
         if [ "${{ inputs.build_env }}" == "aur" ]; then
           # For packages AUR
           cd ${{ inputs.aur_package_dir }}
-          echo "Construindo pacote AUR: ${{ inputs.package_name }}"
-          echo "Current AUR package directory: $(pwd)"
-          echo "AUR package directory contents:"
+          msg_info "Construindo pacote AUR: ${{ inputs.package_name }}"
+          msg_info "Current AUR package directory: $(pwd)"
+          msg_info "AUR package directory contents:"
           ls -la
 
           # Give permissions to builduser for the current directory
@@ -452,17 +479,17 @@ runs:
           makedepends=$(grep -E "^makedepends=\(" PKGBUILD | sed 's/makedepends=(//' | sed 's/)$//' | tr -d "'")
 
           # Instalar dependências
-          echo "Installing dependencies..."
+          msg_info "Installing dependencies..."
           sudo yay -Sy --asdeps --nodeps $depends $makedepends --noconfirm
 
           # Construir o pacote sem instalar
-          echo "Building AUR package: ${{ inputs.package_name }}"
+          msg_info "Building AUR package: ${{ inputs.package_name }}"
           makepkg -s --noconfirm --noprogressbar --nodeps
 
           # Mover o pacote compilado para /home/packages
           mv *.pkg.tar.zst /home/packages/ 2>/dev/null || echo 'No package found to move'
 
-          echo "Build completed. Checking /home/packages:"
+          msg "Build completed. Checking /home/packages:"
           ls -la /home/packages
         else
           # Para pacotes não-AUR
@@ -470,8 +497,8 @@ runs:
           cd $gitfolder
 
           make_with_makepkg() {
-            #makepkg -s --noconfirm --nodeps
-            makepkg --noprogressbar --nodeps
+            msg "makepkg -s --noconfirm --noprogressbar --nodeps ${reset}"
+            makepkg -s --noconfirm --noprogressbar --nodeps
           }
 
           make_with_chrootbuild() {
@@ -482,7 +509,7 @@ runs:
             # Determinar o branch de build
             if [ "${{ inputs.build_env }}" == "extra" ]; then
               build_branch="testing"
-              echo "Ambiente de build é 'extra', usando branch 'testing' para chrootbuild"
+              msg_info "Ambiente de build é 'extra', usando branch 'testing' para chrootbuild"
             else
               build_branch="${{ inputs.branch_type }}"
             fi
@@ -490,21 +517,22 @@ runs:
             # Executar chrootbuild com o branch determinado
             sudo chrootbuild -H -p . -b ${build_branch}
           }
+          #make_with_chrootbuild
           make_with_makepkg
         fi
 
         # Executa comando extra, se fornecido
         if [ -n "${{ inputs.extra_command }}" ]; then
-          echo "Executando comando extra: ${{ inputs.extra_command }}"
+          msg "Executando comando extra: ${{ inputs.extra_command }}"
           ${{ inputs.extra_command }}
         fi
 
         # Debug: Mostrar conteúdo do diretório após o build
-        echo "Directory contents after build:"
+        msg "Directory contents after build:"
         ls -la
-        echo "Contents of /home/packages:"
+        msg "Contents of /home/packages:"
         ls -la /home/packages
-        echo "Contents of /home/sources:"
+        msg "Contents of /home/sources:"
         ls -la /home/sources
 
     - name: Sign Package
