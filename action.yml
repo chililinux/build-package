@@ -681,12 +681,13 @@ runs:
           repo_path="${{ inputs.repo_dir }}"
           file_size_bytes=$(stat -c%s "$i")
           file_size_kb=$((file_size_bytes / 1024))
+          file_size_mb=$((file_size_kb / 1024))
 
           message="📦 <b>[step 2/6] build-package - ENVIANDO PARA REPOSITÓRIO</b>
-          <b>Job:</b> <code>#${GITHUB_RUN_NUMBER}</code>
+          <b>Job:</b> #${GITHUB_RUN_NUMBER}
           <b>Workflow:</b> <code>build-package/action.yml</code>
           <b>Pacote:</b> <code>${pkgname_escaped}</code>
-          <b>Tamanho bytes/kb:</b> <code>${file_size_bytes}/${file_size_kb}k</code>
+          <b>Tamanho bytes/kb:</b> <code>${file_size_bytes}/${file_size_kb}k/${file_size_mb}m</code>
           <b>Repositório:</b> <code>${repo_path}</code>
           <b>Branch:</b> <code>${branch_escaped}</code>"
           send_telegram_message "$message"
