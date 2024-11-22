@@ -685,11 +685,11 @@ runs:
 
           message="📦 <b>[step 2/6] build-package - ENVIANDO PARA REPOSITÓRIO</b>
           <b>Job:</b> #${GITHUB_RUN_NUMBER}
-          <b>Workflow:</b> <code>build-package/action.yml</code>
-          <b>Pacote:</b> <code>${pkgname_escaped}</code>
-          <b>Tamanho bytes/kb:</b> <code>${file_size_bytes}/${file_size_kb}k/${file_size_mb}m</code>
-          <b>Repositório:</b> <code>${repo_path}</code>
-          <b>Branch:</b> <code>${branch_escaped}</code>"
+          <b>Workflow:</b> build-package/action.yml
+          <b>Pacote:</b> ${pkgname_escaped}
+          <b>Tamanho b/kb/mb:</b> ${file_size_bytes}/b${file_size_kb}k/${file_size_mb}m
+          <b>Repositório:</b> ${repo_path}
+          <b>Branch:</b> ${branch_escaped}"
           send_telegram_message "$message"
 
           if rsync -vapz -e "ssh -p ${{ inputs.repo_port }}" $i ${{ inputs.repo_user }}@$ip:${{ inputs.repo_dir }}/${branch,,}/x86_64/; then
@@ -825,9 +825,9 @@ runs:
         minutes=$(( (duration % 3600) / 60 ))
         seconds=$((duration % 60))
 
-        message="⏳ <b>[step 6/6] Job <code>#${GITHUB_RUN_NUMBER}</code> finalizado em:</b> <code>${hours}h ${minutes}m ${seconds}s</code>
-        <b>Job:</b> <code>#${GITHUB_RUN_NUMBER}</code>
-        <b>Workflow:</b> <code>build-package/action.yml</code>
-        <b>Inicio:</b> <code>${START_TIME}</code>
-        <b>Fim   :</b> <code>${END_TIME}</code>"
+        message="⏳ <b>[step 6/6]build-package - JOB FINALIZADO EM:</b> <code>${hours}h ${minutes}m ${seconds}s</code>
+        <b>Job:</b> #${GITHUB_RUN_NUMBER}
+        <b>Workflow:</b> build-package/action.yml
+        <b>Inicio:</b> ${START_TIME}
+        <b>Fim   :</b> ${END_TIME}"
         send_telegram_message "$message"
