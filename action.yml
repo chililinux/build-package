@@ -329,6 +329,7 @@ runs:
     - name: Configure System and Repositories
       shell: bash
       run: |
+        source /tmp/send_telegram_message.sh
         #Configure System and Repositories
         #Set up pacman mirror
         msg "Usando mirror especificado: ${{ inputs.pacman_mirror }}"
@@ -441,6 +442,7 @@ runs:
     - name: Download Source
       shell: bash
       run: |
+        source /tmp/send_telegram_message.sh
         # Download the source code
         if [ "${{ inputs.build_env }}" == "aur" ]; then
           echo "Cloning AUR package from ${{ inputs.url }}"
@@ -475,10 +477,9 @@ runs:
     - name: Build package
       shell: bash
       run: |
+        source /tmp/send_telegram_message.sh
         # Build package - Construr pacote
         set -ex  # Isso fará o script falhar se qualquer comando falhar
-        # Function to send Telegram message
-        source /tmp/send_telegram_message.sh
 
         # Debug: Mostrar ambiente de build
         msg_info "Build environment: ${{ inputs.build_env }}"
