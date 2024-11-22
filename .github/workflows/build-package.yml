@@ -107,7 +107,7 @@ jobs:
           repo_path="${{ secrets.PKGBUILD_DIR }}"
           link_action=https://github.com/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}
 
-          MESSAGE="🚀 <b>[step 0/6] build-package - INICIANDO WORKFLOW</b>
+          MESSAGE="⭐ <b>[step 1/6] build-package - INICIANDO WORKFLOW DE CRIAÇÃO DE PACOTE</b>
           <b>Job:</b> <code>#${GITHUB_RUN_NUMBER}</code>
           <b>Job URL:</b> <a href='https://github.com/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}'>${link_action}</a>
           <b>Workflow:</b> <code>build-package/build-package.yml</code>
