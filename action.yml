@@ -178,6 +178,9 @@ runs:
       run: |
         # Definir a função send_telegram_message no script temporário
         cat << 'EOF' > /tmp/send_telegram_message.sh
+        export TERM=${TERM:-xterm}
+        export TERM=${TERM:-xterm-256color}
+
         # Definindo variáveis de cores
         export green="\033[01;32m"
         export red="\033[01;31m"
@@ -290,7 +293,7 @@ runs:
     - name: Setup build environment
       shell: bash
       run: |
-        # Configuração do ambiente de build
+        # Configurando ambiente de build
         # Atualiza o sistema e instala as dependências necessárias
         sudo pacman -Syu --quiet --needed --noconfirm \
           base-devel \
@@ -300,6 +303,7 @@ runs:
           ninja \
           yay \
           tmate \
+          ncurses \
           duf \
           curl \
           tree
