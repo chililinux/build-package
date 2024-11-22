@@ -192,14 +192,16 @@ runs:
           local parse_mode="$2"
 
           # Define parse_mode como "MarkdownV2" se não for especificado
-          #[[ -z $parse_mode ]] && parse_mode="MarkdownV2"
           [[ -z $parse_mode ]] && parse_mode="HTML"
+
+          # Remove as tags HTML e exibe o resultado no terminal
+          echo -e "${red}$(sed 's/<[^>]*>//g' <<< "$message")${reset}"
+          # Envia a mensagem original com HTML para o Telegram
           curl -s -X POST "https://api.telegram.org/bot${{ inputs.telegram_token }}/sendMessage" \
             -d chat_id="${{ inputs.telegram_chat_id }}" \
             -d text="$message" \
             -d parse_mode="$parse_mode"
         }
-        export -f send_telegram_message
         EOF
 
     - name: Get the latest commit hash/message from remote repository
@@ -237,14 +239,15 @@ runs:
         pkgname_escaped="$pkgname"
         branch_escaped="${branch}"
 
-        send_telegram_message "⭐ <b>[step 1/6] build-package - INICIANDO CRIAÇÃO DE PACOTE</b>
+        message="⭐ <b>[step 1/6] build-package - INICIANDO CRIAÇÃO DE PACOTE</b>
         <b>Job:</b> <code>#${GITHUB_RUN_NUMBER}</code>
         <b>Workflow:</b> <code>build-package/action.yml</code>
         <b>Nome:</b> <code>${pkgname_escaped}</code>
         <b>Commit:</b> <code>${COMMIT_MESSAGE}</code>
         <b>Origem:</b> <code>${repo_origem}</code>
         <b>Iniciado/Triggered:</b> <code>${started_by_user}/${triggered_by_user}</code>
-        <b>Branch:</b> <code>${branch_escaped}</code>" "HTML"
+        <b>Branch:</b> <code>${branch_escaped}</code>"
+        #send_telegram_message "$message"
 
     - name: Debug Inputs
       shell: bash
@@ -686,10 +689,7 @@ runs:
           <b>Tamanho bytes/kb:</b> <code>${file_size_bytes}/${file_size_kb}k</code>
           <b>Repositório:</b> <code>${repo_path}</code>
           <b>Branch:</b> <code>${branch_escaped}</code>"
-          # Remove as tags HTML e exibe o resultado
-          echo "${yellow}$(sed 's/<[^>]*>//g' <<< "$message")${reset}"
-          # Envia a mensagem original com HTML
-          send_telegram_message "$message" "HTML"
+          send_telegram_message "$message"
 
           if rsync -vapz -e "ssh -p ${{ inputs.repo_port }}" $i ${{ inputs.repo_user }}@$ip:${{ inputs.repo_dir }}/${branch,,}/x86_64/; then
             message="✅ <b>[step 3/6] build-package - Sucesso no envio do pacote</b>
@@ -697,19 +697,16 @@ runs:
             <b>Workflow:</b> <code>build-package/action.yml</code>
             <b>Pacote:</b> <code>${pkgname_escaped}</code>
             <b>Branch:</b> <code>${branch_escaped}</code>"
-            # Remove as tags HTML e exibe o resultado
-            echo -e "${green}$(sed 's/<[^>]*>//g' <<< "$message")${reset}"
+            #send_telegram_message "$message"
+            :
           else
             message="❌ <b>[step 3/6] build-package - Falha ao enviar pacote</b>
             <b>Job:</b> <code>#${GITHUB_RUN_NUMBER}</code>
             <b>Workflow:</b> <code>build-package/action.yml</code>
             <b>Pacote:</b> <code>${pkgname_escaped}</code>
             <b>Branch:</b> <code>${branch_escaped}</code>"
-            # Remove as tags HTML e exibe o resultado
-            echo -e "${red}$(sed 's/<[^>]*>//g' <<< "$message")${reset}"
+            send_telegram_message "$message"
           fi
-          # Envia a mensagem original com HTML
-          send_telegram_message "$message" "HTML"
         done
 
         for i in *.sig *.md5; do
@@ -744,9 +741,9 @@ runs:
         #branch_escaped=$(echo "$branch" | sed 's/[_*[\]()~`>#+\-=|{}.!]/\\&/g')
         branch_escaped="$branch"
 
-        #echo "🧹 Limpando pacotes antigos no repositório $branch..."
-        #send_telegram_message "🧹<b>[step 4/6] Iniciando limpeza de pacotes antigos</b>
-        #<b>branch:</b> <code>${branch_escaped}</code>" "HTML"
+        message="🧹<b>[step 4/6] Iniciando limpeza de pacotes antigos</b>
+        <b>branch:</b> <code>${branch_escaped}</code>"
+        #send_telegram_message "$message"
 
         ssh "${{ inputs.repo_user }}@${{ inputs.repo_host }}" -p "${{ inputs.repo_port }}" << 'EOF'
           cd "${{ inputs.repo_dir }}/${{ inputs.branch_type }}/x86_64"
@@ -777,7 +774,7 @@ runs:
             fi
           done
           exit_code=$?
-          echo -e "Limpeza concluída com código de saída: ${exit_code}"
+          echo -e "${cyan}Limpeza concluída com código de saída: ${exit_code} ${reset}"
           exit $exit_code
         EOF
 
@@ -786,35 +783,30 @@ runs:
           ✅ <b>[step 5/6] Limpeza de pacotes antigos concluída com êxito</b>
           <b>Job:</b> <code>#${GITHUB_RUN_NUMBER}</code>
           <b>Workflow:</b> <code>build-package/action.yml</code>"
-          # Remove as tags HTML e exibe o resultado no terminal
-          echo -e "${green}$(sed 's/<[^>]*>//g' <<< "$message")${reset}"
+          #send_telegram_message "$message"
         else
           message="🧹 <b>[step 4/6] build-package - INICIANDO LIMPEZA DE PACOTES ANTIGOS</b>
           ❌ <b>[step 5/6] Falha na limpeza de pacotes antigos</b>
           <b>Job:</b> <code>#${GITHUB_RUN_NUMBER}</code>
           <b>Workflow:</b> <code>build-package/action.yml</code>"
-          # Remove as tags HTML e exibe o resultado no terminal
-          echo -e "${red}$(sed 's/<[^>]*>//g' <<< "$message")${reset}"
+          send_telegram_message "$message"
         fi
-        # Envia a mensagem original com HTML para o Telegram
-        send_telegram_message "$message" "HTML"
 
     - name: Telegram Alert Fail
       if: failure()
       shell: bash
       run: |
-        source /tmp/send_telegram_message.sh
         # Send a Telegram alert if the build fails
-        message="🚨 <b>FALHA ao criar Pacote:</b>
+        # Function to send Telegram message
+        source /tmp/send_telegram_message.sh
+        link_action=https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}
+
+        message="🚨 <b>FALHA ao criar pacote:</b>
         <b>Job:</b> <code>#${GITHUB_RUN_NUMBER}</code>
-        <b>Workflow:</b> <code>build-package/action.yml</code>
-        <b>Nome:</b> <code>${{ github.event.action }}</code>
-        <b>Branch:</b> <code>${branch_fullname}</code>
-        <a href='https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}'>link do erro</a> 🖥""
-        # Remove as tags HTML e exibe o resultado no terminal
-        echo -e "${red}$(sed 's/<[^>]*>//g' <<< "$message")${reset}"
-        # Envia a mensagem original com HTML para o Telegram
-        send_telegram_message "$message" "HTML"
+        <b>Pacote:</b> <code>${{ github.event.action }}</code>
+        <b>Branch:</b> <code>${{ github.ref_name }}</code>
+        <b>URL erro:</b> <a href='https://github.com/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}'>${link_action}</a>"
+        send_telegram_message "$message"
 
     - name: Capturar hora de término e calcular duração
       shell: bash
@@ -837,7 +829,4 @@ runs:
         <b>Workflow:</b> <code>build-package/action.yml</code>
         <b>Inicio:</b> <code>${START_TIME}</code>
         <b>Fim   :</b> <code>${END_TIME}</code>"
-        # Remove as tags HTML e exibe o resultado no terminal
-        echo -e "${green}$(sed 's/<[^>]*>//g' <<< "$message")${reset}"
-        # Envia a mensagem original com HTML para o Telegram
-        send_telegram_message "$message" "HTML"
+        send_telegram_message "$message"
