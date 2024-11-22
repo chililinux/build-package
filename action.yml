@@ -276,7 +276,9 @@ runs:
     - name: Debug Inputs
       shell: bash
       run: |
+        source /tmp/send_telegram_message.sh
         # Debug Inputs
+        echo "$cyan"
         echo "DEBUG: All inputs"
         echo "${{ toJson(inputs) }}"
         echo "DEBUG: build_env from input: ${{ inputs.build_env }}"
