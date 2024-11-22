@@ -84,7 +84,7 @@ env:
   BRANCH_FULLNAME: "${{ github.event.client_payload.branch }}"
 
 jobs:
-  build:
+  setup:
     runs-on: ubuntu-latest
     container:
       image: talesam/community-build:1.4
