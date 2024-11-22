@@ -752,7 +752,7 @@ runs:
           file_size_kb=$((file_size_bytes / 1024))
           file_size_mb=$((file_size_kb / 1024))
 
-          message="📦 <b>[step 2/6] build-package - ENVIANDO PARA REPOSITÓRIO</b>
+          message="✅ <b>[step 2/6] build-package - ENVIANDO 📦 PARA REPOSITÓRIO</b>
           <b>Job:</b> <code>#${GITHUB_RUN_NUMBER}</code>
           <b>Workflow:</b> <code>build-package/action.yml</code>
           <b>Pacote:</b> <code>${pkgname_escaped}</code>
