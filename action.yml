@@ -251,7 +251,6 @@ runs:
     - name: Inicializando criação de pacote
       shell: bash
       run: |
-        # Function to send Telegram message
         source /tmp/send_telegram_message.sh
 
         #https://docs.github.com/pt/enterprise-server@3.10/actions/writing-workflows/choosing-what-your-workflow-does/accessing-contextual-information-about-workflow-runs
@@ -281,13 +280,12 @@ runs:
       run: |
         source /tmp/send_telegram_message.sh
         # Debug Inputs
-        echo "$cyan"
-        echo "DEBUG: All inputs"
-        echo "${{ toJson(inputs) }}"
-        echo "DEBUG: build_env from input: ${{ inputs.build_env }}"
-        echo "DEBUG: build_env from env: $DEBUG_BUILD_ENV"
-        echo "DEBUG: tmate input: ${{ inputs.tmate }}"
-        echo "DEBUG: All env variables"
+        msg "DEBUG: All inputs"
+        msg "${{ toJson(inputs) }}"
+        msg "DEBUG: build_env from input: ${{ inputs.build_env }}"
+        msg "DEBUG: build_env from env: $DEBUG_BUILD_ENV"
+        msg "DEBUG: tmate input: ${{ inputs.tmate }}"
+        msg "DEBUG: All env variables"
         env | sort
 
     - name: Setup build environment
