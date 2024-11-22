@@ -192,17 +192,17 @@ runs:
 
         msg() {
           local msg="$1"
-          echo "build-package=>${cyan}running: ${yellow}${msg}${reset}"
+          echo -e "build-package=>${cyan}running: ${yellow}${msg}${reset}"
         }
 
         msg_info() {
           local msg="$1"
-          echo "build-package=>${yellow}info   : ${cyan}${msg}${reset}"
+          echo -e "build-package=>${yellow}info   : ${cyan}${msg}${reset}"
         }
 
         msg_warning() {
           local msg="$1"
-          echo "build-package=>${red}warning: ${orange}${msg}${reset}"
+          echo -e "build-package=>${red}warning: ${orange}${msg}${reset}"
         }
 
         replicate() {
