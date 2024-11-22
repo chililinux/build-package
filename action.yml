@@ -335,6 +335,16 @@ runs:
         # Add appropriate repositories based on build environment
         if [ "${{ inputs.build_env }}" == "testing" ] || [ "$BRANCH_TYPE" == "testing" ]; then
           echo '
+          [chili-testing]
+          #SigLevel = Optional TrustAll
+          SigLevel = PackageRequired
+          Server = https://repo.chililinux.com/testing/$arch
+
+          [chili-stable]
+          #SigLevel = Optional TrustAll
+          SigLevel = PackageRequired
+          Server = https://repo.chililinux.com/stable/$arch
+
           [community-testing]
           SigLevel = PackageRequired
           Server = https://repo.communitybig.org/testing/$arch
@@ -356,11 +366,26 @@ runs:
           Server = https://repo.biglinux.com.br/stable/$arch' | sudo tee -a /etc/pacman.conf /etc/chrootbuild/pacman.conf.x86_64
         elif [ "${{ inputs.build_env }}" == "extra" ] || [ "$BRANCH_TYPE" == "extra" ]; then
           echo '
+          [chili-extra]
+          #SigLevel = Optional TrustAll
+          SigLevel = PackageRequired
+          Server = https://repo.chililinux.com/extra/$arch
+
           [community-extra]
           SigLevel = PackageRequired
           Server = https://repo.communitybig.org/extra/$arch' | sudo tee -a /etc/pacman.conf /etc/chrootbuild/pacman.conf.x86_64
         elif [ "${{ inputs.build_env }}" == "stable" ] || [ "$BRANCH_TYPE" == "stable" ]; then
           echo '
+          [chili-stable]
+          #SigLevel = Optional TrustAll
+          SigLevel = PackageRequired
+          Server = https://repo.chililinux.com/stable/$arch
+
+          [chili-extra]
+          #SigLevel = Optional TrustAll
+          SigLevel = PackageRequired
+          Server = https://repo.chililinux.com/extra/$arch
+
           [community-stable]
           SigLevel = PackageRequired
           Server = https://repo.communitybig.org/stable/$arch
