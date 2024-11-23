@@ -279,6 +279,7 @@ runs:
       shell: bash
       run: |
         source /tmp/send_telegram_message.sh
+        replicate '='
         # Debug Inputs
         msg "DEBUG: All inputs"
         msg "${{ toJson(inputs) }}"
@@ -287,6 +288,7 @@ runs:
         msg "DEBUG: tmate input: ${{ inputs.tmate }}"
         msg "DEBUG: All env variables"
         env | sort
+        replicate '='
 
     - name: Setup build environment
       shell: bash
