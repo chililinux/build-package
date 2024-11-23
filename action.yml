@@ -316,6 +316,8 @@ runs:
     - name: Import GPG key
       shell: bash
       run: |
+        source /tmp/send_telegram_message.sh
+        replicate '='
         # Import GPG key
         if gpg --batch --import <<< "${{ inputs.gpg_key }}"; then
           echo -e "\033[01;32m=>Importação da chave GPG foi bem-sucedida. ${RESET}"
@@ -323,6 +325,7 @@ runs:
           echo -e "\033[01;31m=>Erro na importação da chave GPG. ${RESET}"
           exit 1
         fi
+        replicate '='
 
     - name: Configure System and Repositories
       shell: bash
