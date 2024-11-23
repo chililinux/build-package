@@ -87,7 +87,8 @@ jobs:
   setup:
     runs-on: ubuntu-latest
     container:
-      image: talesam/community-build:1.4
+      #image: talesam/community-build:1.4
+      image: talesam/community-build:1.5.1
       options: --privileged
     steps:
       - name: Capturar hora de início do workflow
