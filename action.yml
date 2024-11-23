@@ -170,7 +170,7 @@ runs:
         printf "${PINK}Este é um texto em rosa!${RESET}\n"
         printf "${YELLOW}Este é um texto em amarelo!${RESET}\n"
 
-    - name: Definir função send_telegram_message
+    - name: Definir a função send_telegram_message no script temporário
       shell: bash
       env:
         TELEGRAM_TOKEN: "${{ inputs.telegram_token }}"
@@ -192,16 +192,19 @@ runs:
 
         msg() {
           local msg="$1"
+          msg="$(sed 's/<[^>]*>//g' <<< "$msg")" # Remove as tags HTML
           echo -e "build-package=>${cyan}running: ${yellow}${msg}${reset}"
         }
 
         msg_info() {
           local msg="$1"
+          msg="$(sed 's/<[^>]*>//g' <<< "$msg")" # Remove as tags HTML
           echo -e "build-package=>${yellow}info   : ${cyan}${msg}${reset}"
         }
 
         msg_warning() {
           local msg="$1"
+          msg="$(sed 's/<[^>]*>//g' <<< "$msg")" # Remove as tags HTML
           echo -e "build-package=>${red}warning: ${orange}${msg}${reset}"
         }
 
@@ -233,9 +236,11 @@ runs:
         export -f send_telegram_message
         EOF
 
-    - name: Get the latest commit hash/message from remote repository
+    - name: Obter o hash do último commit do repositório remoto
       shell: bash
       run: |
+        source /tmp/send_telegram_message.sh
+        replicate '='
         # Obter o hash do último commit do repositório remoto
         REPO_URL="${{ inputs.url }}"
         COMMIT_HASH="$(git ls-remote $REPO_URL HEAD | awk '{print $1}')"
@@ -249,12 +254,14 @@ runs:
         COMMIT_MESSAGE="$(git log -1 --format=%B $COMMIT_HASH)"
         echo "COMMIT_MESSAGE=$COMMIT_MESSAGE" >> $GITHUB_ENV
         echo "Last commit message: $COMMIT_MESSAGE"
+        replicate '='
 
-    - name: Inicializando criação de pacote
+    - name: Inicializando a criação de pacote
       shell: bash
       run: |
         source /tmp/send_telegram_message.sh
-
+        replicate '='
+        #Inicializando a criação de pacote
         #https://docs.github.com/pt/enterprise-server@3.10/actions/writing-workflows/choosing-what-your-workflow-does/accessing-contextual-information-about-workflow-runs
         pkgname="${{ inputs.package_name }}"
         branch="${{ inputs.branch_type }}"
@@ -276,6 +283,8 @@ runs:
         <b>Iniciado/Triggered:</b> <code>${started_by_user}/${triggered_by_user}</code>
         <b>Branch:</b> <code>${branch_escaped}</code>"
         #send_telegram_message "$message"
+        msg_info "$message"
+        replicate '='
 
     - name: Debug Inputs
       shell: bash
@@ -289,7 +298,7 @@ runs:
         msg "DEBUG: build_env from env: $DEBUG_BUILD_ENV"
         msg "DEBUG: tmate input: ${{ inputs.tmate }}"
         msg "DEBUG: All env variables"
-        env | sort
+        msg "$(env | sort)"
         replicate '='
 
     - name: Setup build environment
