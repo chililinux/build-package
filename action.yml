@@ -209,7 +209,9 @@ runs:
           local char=${1:-'#'}
           local nsize=${2:-$(tput cols)}
           local line
-          printf -v line "%*s" "$nsize" && echo "${line// /$char}"
+          #printf -v line "%*s" "$nsize" && echo "${line// /$char}"
+          #printf -v line "%*s" "$nsize" && echo -e "\033[31m${line// /$char}\033[0m"
+          printf -v line "%*s" "$nsize" && echo -e "${red}${line// /$char}${reset}"
         }
         export -f replicate
 
