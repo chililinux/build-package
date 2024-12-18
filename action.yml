@@ -762,8 +762,9 @@ runs:
           #pkgname_escaped=$(echo "$pkgname" | sed 's/[_*[\]()~`>#+\-=|{}.!]/\\&/g')
           #branch_escaped=$(echo "$branch" | sed 's/[_*[\]()~`>#+\-=|{}.!]/\\&/g')
           pkgname_escaped="$pkgname"
-          echo "PKGNAME_BASENAME=$pkgname_escaped" >> $GITHUB_ENV
           branch_escaped="$branch"
+          echo "PKGNAME_BASENAME=$pkgname_escaped" >> $GITHUB_ENV
+          echo "PKGNAME_BRANCH=$branch_escaped" >> $GITHUB_ENV
           repo_path="${{ inputs.repo_dir }}"
           file_size_bytes=$(stat -c%s "$i")
           file_size_kb=$((file_size_bytes / 1024))
@@ -914,7 +915,7 @@ runs:
         message="🏆 <b>[step 6/6]build-package - JOB FINALIZADO EM ⏳:</b> <code>${hours}h ${minutes}m ${seconds}s</code>
         <b>Job:</b> <code>#${GITHUB_RUN_NUMBER}</code>
         <b>Workflow:</b> <code>build-package/action.yml</code>
-        <b>Pacote:</b> <code>${{ github.ref_name }}/${{ env.PKGNAME_BASENAME }}</code>
+        <b>Pacote:</b> <code>${{ env.PKGNAME_BRANCH }}/${{ env.PKGNAME_BASENAME }}</code>
         <b>Inicio:</b> <code>${START_TIME}</code>
         <b>Fim   :</b> <code>${END_TIME}</code>
         <b>Tempo :</b> <code>${hours}h ${minutes}m ${seconds}s</code>"
