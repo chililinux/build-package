@@ -913,6 +913,7 @@ runs:
         message="🏆 <b>[step 6/6]build-package - JOB FINALIZADO EM ⏳:</b> <code>${hours}h ${minutes}m ${seconds}s</code>
         <b>Job:</b> <code>#${GITHUB_RUN_NUMBER}</code>
         <b>Workflow:</b> <code>build-package/action.yml</code>
+        <b>Pacote:</b> <code>${{ inputs.package_name }}</code>
         <b>Inicio:</b> <code>${START_TIME}</code>
         <b>Fim   :</b> <code>${END_TIME}</code>"
         send_telegram_message "$message"
