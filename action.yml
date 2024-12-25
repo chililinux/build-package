@@ -658,25 +658,25 @@ runs:
         # Import GPG key
         if gpg --batch --import <<< "${{ inputs.gpg_key }}"; then
           msg_ok "Importação da chave GPG foi bem-sucedida."
+          for p in /home/packages/*pkg.tar.zst; do
+            [ -e "$p" ] || { msg_info "Nenhum pacote encontrado para assinar."; break; }
+            msg_info "Assinando pacote: $p"
+            if ! gpg --pinentry-mode loopback --passphrase "${{ inputs.gpg_passphrase }}" --detach-sign "${p}"; then
+              msg_warning "Erro ao assinar o pacote: $p"
+            fi
+          done
+          msg_raw "Listagem de arquivos .sig gerados:"
+          msg_run 'ls -lah *.sig*' || msg_warning "Nenhum arquivo .sig encontrado"
         else
           die "Erro na importação da chave GPG."
         fi
-
-        for p in *.pkg.tar.zst; do
-          msg_info "Assinando pacote: $p"
-          gpg --pinentry-mode loopback --passphrase "${{ inputs.gpg_passphrase }}" --detach-sign "${p}"
-        done
-
-        # Lista os arquivos .sig gerados
-        msg_ok "Arquivos de assinatura gerados:"
-        msg_run 'ls -lah *.sig*' || msg_warning "Nenhum arquivo .sig encontrado"
 
     - name: Generate checksums
       shell: bash
       run: |
         #Generate checksums
         source /tmp/send_telegram_message.sh
-        if [ "${{ inputs.build_env }}" == "aur" ]; then
+        if [[ "${{ inputs.build_env }}" == "aur" ]]; then
           msg_run 'cd /home/packages'
         else
           gitfolder=$(find . -name "*.pkg.tar.zst" -exec dirname {} \;)
