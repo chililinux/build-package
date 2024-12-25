@@ -611,32 +611,21 @@ runs:
         # Debug: Mostrar conteúdo do diretório após o build
         msg_raw "Directory contents after build:"
         msg_run "ls -la $PWD"
-        msg_raw 'Contents of /home/packages:'
-        msg_run 'ls -la /home/packages'
         msg_raw 'Contents of /home/sources:'
         msg_run 'ls -la /home/sources'
+        msg_raw 'Contents of /home/packages:'
+        msg_run 'ls -la /home/packages'
 
     - name: Sign Package
       shell: bash
       run: |
         # Sign Package
         source /tmp/send_telegram_message.sh
+        msg_run 'cd /home/packages'
         replicate '#'
         msg_run "ls -lah $PWD"
         replicate '#'
-        if [[ "${{ inputs.build_env }}" == "aur" ]]; then
-          msg_run 'cd /home/packages'
-        else
-          gitfolder=$(find . -name "*.pkg.tar.zst" -exec dirname {} \;)
-          if [ -z "$gitfolder" ]; then
-            msg_warning "Arquivo de pacote 'pkg.tar.zst' não encontrado. Usando diretório atual."
-            gitfolder="."
-          fi
-          msg_run "cd $gitfolder"
-        fi
-        replicate '#'
-        msg_run "ls -lah $PWD"
-        replicate '#'
+
         # Assina todos os pacotes encontrados
         # Import GPG key
         if gpg --batch --import <<< "${{ inputs.gpg_key }}"; then
@@ -648,6 +637,7 @@ runs:
               msg_warning "Erro ao assinar o pacote: $p"
             fi
           done
+          msg_run "ls -lah $PWD"
           msg_raw "Listagem de arquivos .sig gerados:"
           msg_run 'ls -lah *.sig*' || msg_warning "Nenhum arquivo .sig encontrado"
         else
