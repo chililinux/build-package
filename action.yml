@@ -328,19 +328,19 @@ runs:
     - name: Config ambiente de build - Atualiza e instala dependências necessárias
       shell: bash
       run: |
-        # Config ambiente de build - Atualiza e instala dependências necessárias
-#        sudo pacman -Syu --quiet --needed --noconfirm \
-#          base-devel \
-#          cmake \
-#          libarchive \
-#          meson \
-#          ninja \
-#          yay \
-#          tmate \
-#          ncurses \
-#          duf \
-#          curl \
-#          tree
+        #Config ambiente de build - Atualiza e instala dependências necessárias
+        #sudo pacman -Syu --quiet --needed --noconfirm \
+        #   base-devel \
+        #   cmake \
+        #   libarchive \
+        #   meson \
+        #   ninja \
+        #   yay \
+        #   tmate \
+        #   ncurses \
+        #   duf \
+        #   curl \
+        #   tree
         sudo pacman -Syu --quiet --needed --noconfirm
 
     - name: Setup TMATE Session
@@ -823,60 +823,60 @@ runs:
         fi
         replicate '#'
 
-#    - name: Publish Package on GitHub
-#      if: inputs.publish_github == 'true' && inputs.build_env != 'aur'
-#      shell: bash
-#      run: |
-#        #Publish Package on GitHub
-#        source /tmp/send_telegram_message.sh
-#        replicate '#'
-#        msg_run 'cd /home/packages'
-#        msg_run "ls -lah $PWD"
-#
-#        # Skip linux-zen packages
-#        if [[ -n "$(grep linux-zen <<< $PWD)" ]]; then
-#          exit 0
-#        fi
-#
-#        # Determine the last committer
-#        lastCommit=$(git log -1 --format="%an <%ae>")
-#        if [[ "$(grep github-actions <<< $lastCommit)" ]]; then
-#          lastCommit=$(git log -2 --format="%an <%ae>")
-#        fi
-#
-#        # Set up GitHub authentication and determine the repository
-#        if [ -n "${{ inputs.url }}" ]; then
-#          echo "${{ inputs.github_token }}" | gh auth login --with-token
-#          repo=$(echo "${{ inputs.url }}" | sed 's|https://github.com/||')
-#        else
-#          echo "${{ inputs.github_token }}" | gh auth login --with-token
-#          repo="${{ inputs.repo }}"
-#        fi
-#
-#        # Fallback to github.repository if repo is still empty
-#        if [ -z "$repo" ]; then
-#          repo="${{ github.repository }}"
-#        fi
-#
-#        # Create and upload the release
-#        ls *.pkg* | head -n1 | sed 's/.pkg.*//' > release
-#        release=$(cat release)
-#
-#        msg_raw "release=$release"
-#        msg_raw "repo=$repo"
-#        msg_raw "url=${{ inputs.url }}"
-#
-#        if [[ -n "$repo" ]] && [[ -n "$release" ]]; then
-#          msg_raw "Using repository: $repo"
-#          msg_raw "Creating release: $release"
-#          gh release create ${release} --title ${release} --repo ${repo} --notes "automated release from ${{ inputs.url }}" || echo "release already exists"
-#          for i in *.pkg.tar.zst .sig .tar .md5; do
-#            find -iname "*$i" -exec gh release upload ${release} --repo ${repo} --clobber {} \;
-#          done
-#        else
-#          die "Error: repo or release is empty"
-#        fi
-#        replicate '#'
+    #    - name: Publish Package on GitHub
+    #      if: inputs.publish_github == 'true' && inputs.build_env != 'aur'
+    #      shell: bash
+    #      run: |
+    #        #Publish Package on GitHub
+    #        source /tmp/send_telegram_message.sh
+    #        replicate '#'
+    #        msg_run 'cd /home/packages'
+    #        msg_run "ls -lah $PWD"
+    #
+    #        # Skip linux-zen packages
+    #        if [[ -n "$(grep linux-zen <<< $PWD)" ]]; then
+    #          exit 0
+    #        fi
+    #
+    #        # Determine the last committer
+    #        lastCommit=$(git log -1 --format="%an <%ae>")
+    #        if [[ "$(grep github-actions <<< $lastCommit)" ]]; then
+    #          lastCommit=$(git log -2 --format="%an <%ae>")
+    #        fi
+    #
+    #        # Set up GitHub authentication and determine the repository
+    #        if [ -n "${{ inputs.url }}" ]; then
+    #          echo "${{ inputs.github_token }}" | gh auth login --with-token
+    #          repo=$(echo "${{ inputs.url }}" | sed 's|https://github.com/||')
+    #        else
+    #          echo "${{ inputs.github_token }}" | gh auth login --with-token
+    #          repo="${{ inputs.repo }}"
+    #        fi
+    #
+    #        # Fallback to github.repository if repo is still empty
+    #        if [ -z "$repo" ]; then
+    #          repo="${{ github.repository }}"
+    #        fi
+    #
+    #        # Create and upload the release
+    #        ls *.pkg* | head -n1 | sed 's/.pkg.*//' > release
+    #        release=$(cat release)
+    #
+    #        msg_raw "release=$release"
+    #        msg_raw "repo=$repo"
+    #        msg_raw "url=${{ inputs.url }}"
+    #
+    #        if [[ -n "$repo" ]] && [[ -n "$release" ]]; then
+    #          msg_raw "Using repository: $repo"
+    #          msg_raw "Creating release: $release"
+    #          gh release create ${release} --title ${release} --repo ${repo} --notes "automated release from ${{ inputs.url }}" || echo "release already exists"
+    #          for i in *.pkg.tar.zst .sig .tar .md5; do
+    #            find -iname "*$i" -exec gh release upload ${release} --repo ${repo} --clobber {} \;
+    #          done
+    #        else
+    #          die "Error: repo or release is empty"
+    #        fi
+    #        replicate '#'
 
     - name: Telegram Alert Fail
       if: failure()
