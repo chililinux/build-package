@@ -482,6 +482,7 @@ runs:
       run: |
         # Download the source code
         source /tmp/send_telegram_message.sh
+        replicate '#'
         if [[ "${{ inputs.build_env }}" == "aur" ]]; then
           msg_raw "Cloning AUR package from: ${{ inputs.url }}"
           msg_run "git clone ${{ inputs.url }} aur_package"
@@ -505,12 +506,14 @@ runs:
         else
           msg_warning "No URL provided, assuming already in the correct repository"
         fi
+        replicate '#'
 
     - name: Build package
       shell: bash
       run: |
         # Build package - Construr pacote
         source /tmp/send_telegram_message.sh
+        replicate '#'
         msg_info "Build environment: ${{ inputs.build_env }}"
         msg_info "Package name     : ${{ inputs.package_name }}"
 
@@ -609,12 +612,10 @@ runs:
         fi
 
         # Debug: Mostrar conteúdo do diretório após o build
-        msg_raw "Directory contents after build:"
         msg_run "ls -la $PWD"
-        msg_raw 'Contents of /home/sources:'
         msg_run 'ls -la /home/sources'
-        msg_raw 'Contents of /home/packages:'
         msg_run 'ls -la /home/packages'
+        replicate '#'
 
     - name: Sign Package
       shell: bash
@@ -652,68 +653,13 @@ runs:
         msg_run "ls -lah $PWD"
 
         for p in *pkg.tar.zst; do
-          msg_raw "Gerando MD5 para: $p"
+          msg_info "Gerando MD5 para: $p"
           md5sum "$p"     >> "$p.md5"
-          msg_raw "Gerando MD5 para: $p.sig"
+          msg_info "Gerando MD5 para: $p.sig"
           md5sum "$p.sig" >> "$p.sig.md5"
-          msg_raw "MD5 gerado para: $p.sig"
+          msg_info "MD5 gerado para: $p.sig"
         done
-        msg_run 'ls -lah *.md5' || msg_warning 'Nenhum arquivo MD5 encontrado'
-        replicate '#'
-
-    - name: Publish Package on GitHub
-      if: inputs.publish_github == 'true' && inputs.build_env != 'aur'
-      shell: bash
-      run: |
-        #Publish Package on GitHub
-        source /tmp/send_telegram_message.sh
-        replicate '#'
-        msg_run 'cd /home/packages'
-        msg_run "ls -lah $PWD"
-
-        # Skip linux-zen packages
-        if [[ -n "$(grep linux-zen <<< $PWD)" ]]; then
-          exit 0
-        fi
-
-        # Determine the last committer
-        lastCommit=$(git log -1 --format="%an <%ae>")
-        if [[ "$(grep github-actions <<< $lastCommit)" ]]; then
-          lastCommit=$(git log -2 --format="%an <%ae>")
-        fi
-
-        # Set up GitHub authentication and determine the repository
-        if [ -n "${{ inputs.url }}" ]; then
-          echo "${{ inputs.github_token }}" | gh auth login --with-token
-          repo=$(echo "${{ inputs.url }}" | sed 's|https://github.com/||')
-        else
-          echo "${{ inputs.github_token }}" | gh auth login --with-token
-          repo="${{ inputs.repo }}"
-        fi
-
-        # Fallback to github.repository if repo is still empty
-        if [ -z "$repo" ]; then
-          repo="${{ github.repository }}"
-        fi
-
-        # Create and upload the release
-        ls *.pkg* | head -n1 | sed 's/.pkg.*//' > release
-        release=$(cat release)
-
-        msg_raw "release=$release"
-        msg_raw "repo=$repo"
-        msg_raw "url=${{ inputs.url }}"
-
-        if [[ -n "$repo" ]] && [[ -n "$release" ]]; then
-          msg_raw "Using repository: $repo"
-          msg_raw "Creating release: $release"
-          gh release create ${release} --title ${release} --repo ${repo} --notes "automated release from ${{ inputs.url }}" || echo "release already exists"
-          for i in *.pkg.tar.zst .sig .tar .md5; do
-            find -iname "*$i" -exec gh release upload ${release} --repo ${repo} --clobber {} \;
-          done
-        else
-          die "Error: repo or release is empty"
-        fi
+        msg_run 'ls -lah $PWD *.md5' || msg_warning 'Nenhum arquivo MD5 encontrado'
         replicate '#'
 
     - name: Push the package to the repository
@@ -735,31 +681,25 @@ runs:
           msg_run 'cd /home/packages'
           branch="EXTRA"  # Todos os pacotes AUR vão para EXTRA
         else
-          gitfolder="$(find . -name "*.pkg.tar.zst" -exec dirname {} \;)"
-          msg_run "cd $gitfolder"
-
-          # Determine the last committer (apenas para pacotes não-AUR)
-          lastCommit="$(git log -1 --format="%an <%ae>")"
-          if [[ "$(grep github-actions <<< $lastCommit)" ]]; then
-            lastCommit="$(git log -2 --format="%an <%ae>")"
-          fi
-
+          msg_run 'cd /home/packages'
           # Set the branch based on BRANCH_TYPE
-          if [[ "${{ inputs.branch_type }}" == "stable" ]]; then
-            branch="STABLE"
-          elif [[ "${{ inputs.branch_type }}" == "extra" ]]; then
-            branch="EXTRA"
-          else
-            branch="TESTING"
-          fi
+          case "${{ inputs.branch_type }}" in
+            "stable")
+              branch="STABLE"
+              ;;
+            "extra")
+              branch="EXTRA"
+              ;;
+            *)
+              branch="TESTING"
+              ;;
+          esac
         fi
-        msg_run 'ls -lh'
+        msg_run "ls -lha $PWD"
 
         # Upload the package files
         for i in *.pkg.tar.zst; do
           pkgname=$(basename "$i")
-          #pkgname_escaped=$(echo "$pkgname" | sed 's/[_*[\]()~`>#+\-=|{}.!]/\\&/g')
-          #branch_escaped=$(echo "$branch" | sed 's/[_*[\]()~`>#+\-=|{}.!]/\\&/g')
           pkgname_escaped="$pkgname"
           branch_escaped="$branch"
           echo "PKGNAME_BASENAME=$pkgname_escaped"  >> $GITHUB_ENV
@@ -808,20 +748,24 @@ runs:
         #Keeps only the most recent package
         source /tmp/send_telegram_message.sh
         replicate '#'
-        # Determine the branch based on the branch type
-        if [[ "${{ inputs.branch_type }}" == "stable" ]]; then
-          branch="STABLE"
-          db_name="chili-stable"
-        elif [[ "${{ inputs.branch_type }}" == "extra" ]]; then
-          branch="EXTRA"
-          db_name="chili-extra"
-        elif [[ "${{ inputs.branch_type }}" == "aur" ]] || [[ "${{ inputs.branch_type }}" == "testing" ]]; then
-          branch="TESTING"
-          db_name="chili-testing"
-        else
-          die "${red}Error: Unknown branch type: ${{ inputs.branch_type }} ${reset}"
-        fi
-
+        # Determine the branch and database name based on the branch type
+        case "${{ inputs.branch_type }}" in
+          "stable")
+            branch="STABLE"
+            db_name="chili-stable"
+            ;;
+          "extra")
+            branch="EXTRA"
+            db_name="chili-extra"
+            ;;
+          "aur" | "testing")
+            branch="TESTING"
+            db_name="chili-testing"
+            ;;
+          *)
+            die "${red}Error: Unknown branch type: ${{ inputs.branch_type }} ${reset}"
+            ;;
+        esac
         msg_raw "       Branch: $branch"
         msg_raw "Database name: $db_name"
         branch_escaped="$branch"
@@ -863,7 +807,7 @@ runs:
           exit $exit_code
         EOF
 
-        if [ $? -eq 0 ]; then
+        if [[ $? -eq 0 ]]; then
           message="🧹 <b>[step 4/6] build-package - INICIANDO LIMPEZA DE PACOTES ANTIGOS</b>
           ✅ <b>[step 5/6] Limpeza de pacotes antigos concluída com êxito</b>
           <b>Job:</b> <code>#${GITHUB_RUN_NUMBER}</code>
@@ -877,6 +821,61 @@ runs:
           send_telegram_message "$message"
         fi
         replicate '#'
+
+#    - name: Publish Package on GitHub
+#      if: inputs.publish_github == 'true' && inputs.build_env != 'aur'
+#      shell: bash
+#      run: |
+#        #Publish Package on GitHub
+#        source /tmp/send_telegram_message.sh
+#        replicate '#'
+#        msg_run 'cd /home/packages'
+#        msg_run "ls -lah $PWD"
+#
+#        # Skip linux-zen packages
+#        if [[ -n "$(grep linux-zen <<< $PWD)" ]]; then
+#          exit 0
+#        fi
+#
+#        # Determine the last committer
+#        lastCommit=$(git log -1 --format="%an <%ae>")
+#        if [[ "$(grep github-actions <<< $lastCommit)" ]]; then
+#          lastCommit=$(git log -2 --format="%an <%ae>")
+#        fi
+#
+#        # Set up GitHub authentication and determine the repository
+#        if [ -n "${{ inputs.url }}" ]; then
+#          echo "${{ inputs.github_token }}" | gh auth login --with-token
+#          repo=$(echo "${{ inputs.url }}" | sed 's|https://github.com/||')
+#        else
+#          echo "${{ inputs.github_token }}" | gh auth login --with-token
+#          repo="${{ inputs.repo }}"
+#        fi
+#
+#        # Fallback to github.repository if repo is still empty
+#        if [ -z "$repo" ]; then
+#          repo="${{ github.repository }}"
+#        fi
+#
+#        # Create and upload the release
+#        ls *.pkg* | head -n1 | sed 's/.pkg.*//' > release
+#        release=$(cat release)
+#
+#        msg_raw "release=$release"
+#        msg_raw "repo=$repo"
+#        msg_raw "url=${{ inputs.url }}"
+#
+#        if [[ -n "$repo" ]] && [[ -n "$release" ]]; then
+#          msg_raw "Using repository: $repo"
+#          msg_raw "Creating release: $release"
+#          gh release create ${release} --title ${release} --repo ${repo} --notes "automated release from ${{ inputs.url }}" || echo "release already exists"
+#          for i in *.pkg.tar.zst .sig .tar .md5; do
+#            find -iname "*$i" -exec gh release upload ${release} --repo ${repo} --clobber {} \;
+#          done
+#        else
+#          die "Error: repo or release is empty"
+#        fi
+#        replicate '#'
 
     - name: Telegram Alert Fail
       if: failure()
