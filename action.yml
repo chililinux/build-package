@@ -508,53 +508,51 @@ runs:
             msg_run "git checkout ${{ inputs.git_branch }}"
           fi
         else
-          msg_warning "No URL provided, assuming we're already in the correct repository"
+          msg_warning "No URL provided, assuming already in the correct repository"
         fi
 
         # Debug: Show current directory and contents
-        msg_raw "Current directory: $PWD"
-        msg_raw "Directory contents:"
-        msg_run 'ls -la'
+        replicate '#'
+        msg_run "ls -la $PWD"
+        replicate '#'
 
     - name: Build package
       shell: bash
       run: |
-        source /tmp/send_telegram_message.sh
         # Build package - Construr pacote
+        source /tmp/send_telegram_message.sh
         #set -ex  # Isso fará o script falhar se qualquer comando falhar
-
-        # Debug: Mostrar ambiente de build
         msg_info "Build environment: ${{ inputs.build_env }}"
-        msg_info "Package name: ${{ inputs.package_name }}"
+        msg_info "Package name     : ${{ inputs.package_name }}"
 
         # Se entramos em um diretório no passo anterior, vamos garantir que estamos nele
-        if [ -d "source_repo" ]; then
-          cd source_repo
+        if [[ -d "source_repo" ]]; then
+          msg_run 'cd source_repo'
         fi
 
-        # Debug: Mostrar diretório atual e conteúdo
-        msg_info "Current directory: $(pwd)"
-        msg_info "Directory contents:"
-        ls -la
+        # Debug: Show current directory and contents
+        replicate '#'
+        msg_run "ls -la $PWD"
+        replicate '#'
 
         # Create and set permissions for $PKGDEST and $SRCDEST
-        sudo mkdir -p /home/packages /home/sources
-        sudo chown builduser:builduser /home/packages /home/sources
+        msg_run 'sudo mkdir -p /home/packages /home/sources'
+        msg_run 'sudo chown builduser:builduser /home/packages /home/sources'
 
-        if [ "${{ inputs.build_env }}" == "aur" ]; then
-          # For packages AUR
-          cd ${{ inputs.aur_package_dir }}
-          msg_info "Construindo pacote AUR: ${{ inputs.package_name }}"
-          msg_info "Current AUR package directory: $(pwd)"
-          msg_info "AUR package directory contents:"
-          ls -la
+        if [[ "${{ inputs.build_env }}" == "aur" ]]; then
+          msg_run "cd ${{ inputs.aur_package_dir }}"
+          msg_info "Construindo pacote AUR       : ${{ inputs.package_name }}"
+          msg_info "Current AUR package directory: $PWD"
+          replicate '#'
+          msg_run "ls -la $PWD"
+          replicate '#'
 
           # Give permissions to builduser for the current directory
-          sudo chown -R builduser:builduser .
+          msg_run 'sudo chown -R builduser:builduser .'
 
           # Create temporary directory for makepkg
-          sudo mkdir -p /tmp/makepkg
-          sudo chown builduser:builduser /tmp/makepkg
+          msg_run 'sudo mkdir -p /tmp/makepkg'
+          msg_run 'sudo chown builduser:builduser /tmp/makepkg'
 
           # Extract dependencies from PKGBUILD
           #depends=$(grep -E "^depends=\(" PKGBUILD | sed 's/depends=(//' | sed 's/)$//' | tr -d "'")
