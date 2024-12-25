@@ -637,6 +637,7 @@ runs:
       shell: bash
       run: |
         # Sign Package
+        source /tmp/send_telegram_message.sh
         msg_run 'ls -lah'
         if [ "${{ inputs.build_env }}" == "aur" ]; then
           msg_run 'cd /home/packages'
@@ -670,6 +671,7 @@ runs:
       shell: bash
       run: |
         #Generate checksums
+        source /tmp/send_telegram_message.sh
         if [ "${{ inputs.build_env }}" == "aur" ]; then
           msg_run 'cd /home/packages'
         else
@@ -698,6 +700,7 @@ runs:
       shell: bash
       run: |
         #Publish Package on GitHub
+        source /tmp/send_telegram_message.sh
         gitfolder=$(find . -name "*.pkg.tar.zst" -exec dirname {} \;)
         msg_run "cd $gitfolder"
         msg_run 'ls -lh'
