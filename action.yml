@@ -917,4 +917,5 @@ runs:
         <b>Fim   :</b> <code>${END_TIME}</code>
         <b>Tempo :</b> <code>${hours}h ${minutes}m ${seconds}s</code>"
         send_telegram_message "$message"
+        msg_ok "$message"
         replicate '#'
