@@ -571,7 +571,7 @@ runs:
             pkgname="${{ inputs.package_name }}"
             full_pkgname="$(find . -type f -iname "$pkgname*.pkg.tar.zst" -print)"
             echo "full_pkgname=$full_pkgname" >> $GITHUB_ENV
-            mv "$full_pkgname" /home/packages/ 2>/dev/null || echo 'No package found to move'
+            cp -f "$full_pkgname" /home/packages/ 2>/dev/null || echo 'No package found to copy"
             msg "Build completed. Checking /home/packages:"
             msg_run 'ls -la /home/packages'
           else
@@ -638,18 +638,22 @@ runs:
       run: |
         # Sign Package
         source /tmp/send_telegram_message.sh
-        msg_run 'ls -lah'
+        replicate '#'
+        msg_run "ls -lah $PWD"
+        replicate '#'
         if [[ "${{ inputs.build_env }}" == "aur" ]]; then
           msg_run 'cd /home/packages'
         else
           gitfolder=$(find . -name "*.pkg.tar.zst" -exec dirname {} \;)
           if [ -z "$gitfolder" ]; then
-            echo "Arquivo de pacote 'pkg.tar.zst' não encontrado. Usando diretório atual."
+            msg_warning "Arquivo de pacote 'pkg.tar.zst' não encontrado. Usando diretório atual."
             gitfolder="."
           fi
-          cd "$gitfolder"
+          msg_run "cd $gitfolder"
         fi
-        msg_run 'ls -lah'
+        replicate '#'
+        msg_run "ls -lah $PWD"
+        replicate '#'
         # Assina todos os pacotes encontrados
         # Import GPG key
         if gpg --batch --import <<< "${{ inputs.gpg_key }}"; then
