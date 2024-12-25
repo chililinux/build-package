@@ -649,28 +649,20 @@ runs:
       run: |
         #Generate checksums
         source /tmp/send_telegram_message.sh
-        if [[ "${{ inputs.build_env }}" == "aur" ]]; then
-          msg_run 'cd /home/packages'
-        else
-          gitfolder=$(find . -name "*.pkg.tar.zst" -exec dirname {} \;)
-          if [[ -z "$gitfolder" ]]; then
-            msg_warning "Arquivo de pacote 'pkg.tar.zst' não encontrado. Usando diretório atual."
-            gitfolder="."
-          fi
-          msg_run "cd $gitfolder"
-        fi
-
-        for i in *.pkg.tar.zst; do
+        replicate '#'
+        msg_run 'cd /home/packages'
+        for p in /home/packages/*pkg.tar.zst; do
           if [[ -f "$i" ]]; then
             msg_raw "Gerando MD5 para: $i"
             md5sum "$i"     >> "$i.md5"
+            msg_raw "Gerando MD5 para: $i.sig"
             md5sum "$i.sig" >> "$i.sig.md5"
-            msg_raw "MD5 gerado para: $i"
+            msg_raw "MD5 gerado para: $i.sig"
           fi
         done
-
         msg_raw "Arquivos MD5 gerados:"
         msg_run 'ls -l *.md5' || msg_warning "Nenhum arquivo MD5 encontrado"
+        replicate '#'
 
     - name: Publish Package on GitHub
       if: inputs.publish_github == 'true' && inputs.build_env != 'aur'
