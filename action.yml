@@ -568,8 +568,8 @@ runs:
           msg_info "Building AUR package: ${{ inputs.package_name }}"
           #if makepkg -s --noconfirm --noprogressbar --nodeps; then
           if makepkg -s --noconfirm --noprogressbar; then
-            package_name="${{ inputs.package_name }}"
-            full_pkgname="$(find . -type f -iname "*.pkg.tar.zst" -print)"
+            pkgname="${{ inputs.package_name }}"
+            full_pkgname="$(find . -type f -iname "$pkgname*.pkg.tar.zst" -print)"
             echo "full_pkgname=$full_pkgname" >> $GITHUB_ENV
             mv "$full_pkgname" /home/packages/ 2>/dev/null || echo 'No package found to move'
             msg "Build completed. Checking /home/packages:"
@@ -586,7 +586,7 @@ runs:
           make_with_makepkg() {
             if makepkg -s --noconfirm --noprogressbar; then
               pkgname="${{ inputs.package_name }}"
-              full_pkgname=$(find . -type f -iname "$pkgname*" -print)
+              full_pkgname="$(find . -type f -iname "$pkgname*.pkg.tar.zst" -print)"
               msg_raw "full_pkgname : $full_pkgname"
               echo "full_pkgname=$full_pkgname" >> $GITHUB_ENV
               msg_run "mv $full_pkgname /home/packages/ 2>/dev/null" || msg_warning 'No package found to move'
