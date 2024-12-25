@@ -329,18 +329,19 @@ runs:
       shell: bash
       run: |
         # Config ambiente de build - Atualiza e instala dependências necessárias
-        sudo pacman -Syu --quiet --needed --noconfirm \
-          base-devel \
-          cmake \
-          libarchive \
-          meson \
-          ninja \
-          yay \
-          tmate \
-          ncurses \
-          duf \
-          curl \
-          tree
+#        sudo pacman -Syu --quiet --needed --noconfirm \
+#          base-devel \
+#          cmake \
+#          libarchive \
+#          meson \
+#          ninja \
+#          yay \
+#          tmate \
+#          ncurses \
+#          duf \
+#          curl \
+#          tree
+        sudo pacman -Syu --quiet --needed --noconfirm
 
     - name: Setup TMATE Session
       uses: mxschmitt/action-tmate@v3
