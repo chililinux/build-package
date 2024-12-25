@@ -506,17 +506,11 @@ runs:
           msg_warning "No URL provided, assuming already in the correct repository"
         fi
 
-        # Debug: Show current directory and contents
-        replicate '#'
-        msg_run "ls -la $PWD"
-        replicate '#'
-
     - name: Build package
       shell: bash
       run: |
         # Build package - Construr pacote
         source /tmp/send_telegram_message.sh
-        #set -ex  # Isso fará o script falhar se qualquer comando falhar
         msg_info "Build environment: ${{ inputs.build_env }}"
         msg_info "Package name     : ${{ inputs.package_name }}"
 
@@ -543,7 +537,7 @@ runs:
           replicate '#'
 
           # Give permissions to builduser for the current directory
-          msg_run 'sudo chown -R builduser:builduser .'
+          msg_run 'sudo chown -R builduser:builduser . '
 
           # Create temporary directory for makepkg
           msg_run 'sudo mkdir -p /tmp/makepkg'
@@ -553,21 +547,20 @@ runs:
           #depends=$(grep -E "^depends=\(" PKGBUILD | sed 's/depends=(//' | sed 's/)$//' | tr -d "'")
           #makedepends=$(grep -E "^makedepends=\(" PKGBUILD | sed 's/makedepends=(//' | sed 's/)$//' | tr -d "'")
           # Instalar dependências
-          msg_info "Installing dependencies..."
+          #msg_info "Installing dependencies..."
           #sudo yay -Sy --asdeps --nodeps $depends $makedepends --noconfirm
 
           # Construir o pacote sem instalar
           msg_info "Building AUR package: ${{ inputs.package_name }}"
-          #if makepkg -s --noconfirm --noprogressbar --nodeps; then
           if makepkg -s --noconfirm --noprogressbar; then
             pkgname="${{ inputs.package_name }}"
             full_pkgname="$(find . -type f -iname "$pkgname*.pkg.tar.zst" -print)"
             echo "full_pkgname=$full_pkgname" >> $GITHUB_ENV
-            cp -f "$full_pkgname" /home/packages/ 2>/dev/null || echo 'No package found to copy"
-            msg "Build completed. Checking /home/packages:"
+            msg_run "cp -f $full_pkgname /home/packages/ 2>/dev/null" || msg_warning 'No package found to copy'
+            msg_raw 'Build completed.'
             msg_run 'ls -la /home/packages'
           else
-            die "Build makepkg fail."
+            die 'Build makepkg fail.'
           fi
         else
           # Para pacotes não-AUR
@@ -616,11 +609,11 @@ runs:
         fi
 
         # Debug: Mostrar conteúdo do diretório após o build
-        msg "Directory contents after build:"
-        msg_run 'ls -la $PWD'
-        msg "Contents of /home/packages:"
+        msg_raw "Directory contents after build:"
+        msg_run "ls -la $PWD"
+        msg_raw 'Contents of /home/packages:'
         msg_run 'ls -la /home/packages'
-        msg "Contents of /home/sources:"
+        msg_raw 'Contents of /home/sources:'
         msg_run 'ls -la /home/sources'
 
     - name: Sign Package
