@@ -482,40 +482,39 @@ runs:
         sudo sed -i '/-Syy/s/-Syy/-Syy git /' /usr/lib/manjaro-chrootbuild/util-chroot.sh
         replicate '#'
 
-    - name: Download Source
+    - name: Download Source code
       shell: bash
       run: |
-        source /tmp/send_telegram_message.sh
         # Download the source code
-        if [ "${{ inputs.build_env }}" == "aur" ]; then
-          echo "Cloning AUR package from ${{ inputs.url }}"
-          git clone ${{ inputs.url }} aur_package
-          if [ -d "aur_package" ]; then
-            cd aur_package
-            if [ ! -f "PKGBUILD" ]; then
-              echo "Error: PKGBUILD not found in the AUR package"
-              exit 1
+        source /tmp/send_telegram_message.sh
+        if [[ "${{ inputs.build_env }}" == "aur" ]]; then
+          msg_raw "Cloning AUR package from: ${{ inputs.url }}"
+          msg_run "git clone ${{ inputs.url }} aur_package"
+          if [[ -d "aur_package" ]]; then
+            msg_run 'cd aur_package'
+            if [[ ! -f "PKGBUILD" ]]; then
+              die "Error: PKGBUILD not found in the AUR package"
             fi
           else
-            echo "Error: Failed to clone AUR package"
-            exit 1
+            die "Error: Failed to clone AUR package"
           fi
-        elif [ -n "${{ inputs.url }}" ]; then
-          echo "Cloning repository from ${{ inputs.url }}"
-          git clone ${{ inputs.url }}.git source_repo
-          cd source_repo
-          if [ -n "${{ inputs.git_branch }}" ]; then
-            echo "Checking out branch ${{ inputs.git_branch }}"
-            git checkout ${{ inputs.git_branch }}
+
+        elif [[ -n "${{ inputs.url }}" ]]; then
+          msg_raw "Cloning repository from: ${{ inputs.url }}"
+          msg_run "git clone ${{ inputs.url }}.git source_repo"
+          msg_run 'cd source_repo'
+          if [[ -n "${{ inputs.git_branch }}" ]]; then
+            msg_raw "Checking out branch: ${{ inputs.git_branch }}"
+            msg_run "git checkout ${{ inputs.git_branch }}"
           fi
         else
-          echo "No URL provided, assuming we're already in the correct repository"
+          msg_warning "No URL provided, assuming we're already in the correct repository"
         fi
 
         # Debug: Show current directory and contents
-        echo "Current directory: $(pwd)"
-        echo "Directory contents:"
-        ls -la
+        msg_raw "Current directory: $PWD"
+        msg_raw "Directory contents:"
+        msg_run 'ls -la'
 
     - name: Build package
       shell: bash
