@@ -584,9 +584,19 @@ runs:
           cd $gitfolder
 
           make_with_makepkg() {
-            msg "makepkg -s --noconfirm --noprogressbar --nodeps ${reset}"
-            makepkg -s --noconfirm --noprogressbar --nodeps
-          }
+            msg "makepkg -s --noconfirm --noprogressbar ${reset}"
+            if makepkg -s --noconfirm --noprogressbar; then
+              package_name="${{ inputs.package_name }}"
+              full_pkgname=$(find . -type f -name "$package_name*" -print)
+              echo "full_pkgname=$full_pkgname" >> $GITHUV_ENV
+              mv "$full_pkgname" /home/packages/ 2>/dev/null || echo 'No package found to move'
+              msg "Build completed. Checking /home/packages:"
+              ls -la /home/packages
+            else
+              msg_warning "Build makepkg fail."
+              exit 1
+            fi
+           }
 
           make_with_chrootbuild() {
             # Ensure architecture is set to x86_64
@@ -616,97 +626,89 @@ runs:
 
         # Debug: Mostrar conteúdo do diretório após o build
         msg "Directory contents after build:"
-        ls -la
+        msg_run 'ls -la'
         msg "Contents of /home/packages:"
-        ls -la /home/packages
+        msg_run 'ls -la /home/packages'
         msg "Contents of /home/sources:"
-        ls -la /home/sources
+        msg_run 'ls -la /home/sources'
 
     - name: Sign Package
       shell: bash
       run: |
         # Sign Package
-        ls -lah
+        msg_run 'ls -lah'
         if [ "${{ inputs.build_env }}" == "aur" ]; then
-          # Para pacotes AUR
-          cd /home/packages
+          msg_run 'cd /home/packages'
         else
-          # Para pacotes não-AUR
-          gitfolder=$(find . -name "*.zst" -exec dirname {} \;)
+          gitfolder=$(find . -name "*.pkg.tar.zst" -exec dirname {} \;)
           if [ -z "$gitfolder" ]; then
-            echo "Arquivo de pacote '.zst' não encontrado. Usando diretório atual."
+            echo "Arquivo de pacote 'pkg.tar.zst' não encontrado. Usando diretório atual."
             gitfolder="."
           fi
           cd "$gitfolder"
         fi
-
-        ls -lah
+        msg_run 'ls -lah'
         # Assina todos os pacotes encontrados
         # Import GPG key
         if gpg --batch --import <<< "${{ inputs.gpg_key }}"; then
-          echo -e "\033[01;32m=>Importação da chave GPG foi bem-sucedida. ${RESET}"
+          msg_ok "Importação da chave GPG foi bem-sucedida."
         else
-          echo -e "\033[01;31m=>Erro na importação da chave GPG. ${RESET}"
-          exit 1
+          die "Erro na importação da chave GPG."
         fi
 
-        for p in *.zst; do
-          echo -e "\033[01;36mAssinando pacote: $p ${RESET}"
+        for p in *.pkg.tar.zst; do
+          msg_info "Assinando pacote: $p"
           gpg --pinentry-mode loopback --passphrase "${{ inputs.gpg_passphrase }}" --detach-sign "${p}"
         done
 
         # Lista os arquivos .sig gerados
-        echo "Arquivos de assinatura gerados:"
-        ls -lah *.sig* || echo "Nenhum arquivo .sig encontrado"
+        msg_ok "Arquivos de assinatura gerados:"
+        msg_run 'ls -lah *.sig*' || msg_warning "Nenhum arquivo .sig encontrado"
 
-    # Gera checksums para os pacotes
     - name: Generate checksums
       shell: bash
       run: |
+        #Generate checksums
         if [ "${{ inputs.build_env }}" == "aur" ]; then
-          # Para pacotes AUR
-          cd /home/packages
+          msg_run 'cd /home/packages'
         else
-          # Para pacotes não-AUR
-          gitfolder=$(find . -name "*.zst" -exec dirname {} \;)
-          if [ -z "$gitfolder" ]; then
-            echo "Arquivo de pacote '.zst' não encontrado. Usando diretório atual."
+          gitfolder=$(find . -name "*.pkg.tar.zst" -exec dirname {} \;)
+          if [[ -z "$gitfolder" ]]; then
+            msg_warning "Arquivo de pacote 'pkg.tar.zst' não encontrado. Usando diretório atual."
             gitfolder="."
           fi
-          cd "$gitfolder"
+          msg_run "cd $gitfolder"
         fi
 
-        # Gera checksums para pacotes e assinaturas
         for i in *.pkg.tar.zst; do
           if [[ -f "$i" ]]; then
-            echo -e "\033[01;36mGerado MD5 para: $i ${RESET}"
+            msg_raw "Gerando MD5 para: $i"
             md5sum "$i"     >> "$i.md5"
             md5sum "$i.sig" >> "$i.sig.md5"
-            echo -e "\033[01;36mMD5 gerado para: $i ${RESET}"
+            msg_raw "MD5 gerado para: $i"
           fi
         done
 
-        # Lista os arquivos MD5 gerados
-        echo "Arquivos MD5 gerados:"
-        ls -l *.md5 || echo "Nenhum arquivo MD5 encontrado"
+        msg_raw "Arquivos MD5 gerados:"
+        msg_run 'ls -l *.md5' || msg_warning "Nenhum arquivo MD5 encontrado"
 
-    # Publish the package on GitHub
     - name: Publish Package on GitHub
       if: inputs.publish_github == 'true' && inputs.build_env != 'aur'
       shell: bash
       run: |
-        gitfolder=$(find . -name "*.zst" -exec dirname {} \;)
-        cd $gitfolder
-        ls -lh
+        #Publish Package on GitHub
+        gitfolder=$(find . -name "*.pkg.tar.zst" -exec dirname {} \;)
+        msg_run "cd $gitfolder"
+        msg_run 'ls -lh'
 
         # Skip linux-zen packages
-        if [ -n "$(grep linux-zen <<< $gitfolder)" ];then
+        if [[ -n "$(grep linux-zen <<< $gitfolder)" ]]; then
           exit 0
         fi
 
         # Determine the last committer
         lastCommit=$(git log -1 --format="%an <%ae>")
-        if [ "$(grep github-actions <<< $lastCommit)" ];then
+        if [[ "$(grep github-actions <<< $lastCommit)" ]]; then
           lastCommit=$(git log -2 --format="%an <%ae>")
         fi
 
@@ -728,64 +730,58 @@ runs:
         ls *.pkg* | head -n1 | sed 's/.pkg.*//' > release
         release=$(cat release)
 
-        echo "release=$release"
-        echo "repo=$repo"
-        echo "url=${{ inputs.url }}"
+        msg_raw "release=$release"
+        msg_raw "repo=$repo"
+        msg_raw "url=${{ inputs.url }}"
 
-        if [ -n "$repo" ] && [ -n "$release" ]; then
-          echo "Using repository: $repo"
-          echo "Creating release: $release"
+        if [[ -n "$repo" ]] && [[ -n "$release" ]]; then
+          msg_raw "Using repository: $repo"
+          msg_raw "Creating release: $release"
           gh release create ${release} --title ${release} --repo ${repo} --notes "automated release from ${{ inputs.url }}" || echo "release already exists"
-          for i in .zst .sig .tar .md5; do
+          for i in *.pkg.tar.zst .sig .tar .md5; do
             find -iname "*$i" -exec gh release upload ${release} --repo ${repo} --clobber {} \;
           done
         else
-          echo "Error: repo or release is empty"
-          exit 1
+          die "Error: repo or release is empty"
         fi
 
-    # Push the package to the repository
-    - name: Push to Repo
+    - name: Push the package to the repository
       if: inputs.push_to_repo == 'true'
       shell: bash
       env:
         LANG: en_US.UTF-8
         LC_ALL: en_US.UTF-8
       run: |
-        # Setup SSH
-        mkdir -p /home/builduser/.ssh
-        ssh-keyscan -t rsa -p ${{ inputs.repo_port }} ${{ inputs.repo_host }} >> /home/builduser/.ssh/known_hosts
-        ip=${{ inputs.repo_host }}
+        #Push the package to the repository
+        source /tmp/send_telegram_message.sh
+        #Setup SSH
+        msg_run 'mkdir -p /home/builduser/.ssh'
+        msg_run "ssh-keyscan -t rsa -p ${{ inputs.repo_port }} ${{ inputs.repo_host }} >> /home/builduser/.ssh/known_hosts"
+        ip="${{ inputs.repo_host }}"
 
-        if [ "${{ inputs.build_env }}" == "aur" ]; then
-          # Para pacotes AUR
-          cd /home/packages
+        if [[ "${{ inputs.build_env }}" == "aur" ]]; then
+          msg_run 'cd /home/packages'
           branch="EXTRA"  # Todos os pacotes AUR vão para EXTRA
         else
-          # Para pacotes não-AUR
-          gitfolder=$(find . -name "*.zst" -exec dirname {} \;)
-          cd $gitfolder
+          gitfolder="$(find . -name "*.pkg.tar.zst" -exec dirname {} \;)"
+          msg_run "cd $gitfolder"
 
           # Determine the last committer (apenas para pacotes não-AUR)
-          lastCommit=$(git log -1 --format="%an <%ae>")
-          if [ "$(grep github-actions <<< $lastCommit)" ];then
-            lastCommit=$(git log -2 --format="%an <%ae>")
+          lastCommit="$(git log -1 --format="%an <%ae>")"
+          if [[ "$(grep github-actions <<< $lastCommit)" ]]; then
+            lastCommit="$(git log -2 --format="%an <%ae>")"
           fi
 
           # Set the branch based on BRANCH_TYPE
-          if [ "${{ inputs.branch_type }}" == "stable" ]; then
+          if [[ "${{ inputs.branch_type }}" == "stable" ]]; then
             branch="STABLE"
-          elif [ "${{ inputs.branch_type }}" == "extra" ]; then
+          elif [[ "${{ inputs.branch_type }}" == "extra" ]]; then
             branch="EXTRA"
           else
             branch="TESTING"
           fi
         fi
-
-        ls -lh
-
-        # Function to send Telegram message
-        source /tmp/send_telegram_message.sh
+        msg_run 'ls -lh'
 
         # Upload the package files
         for i in *.pkg.tar.zst; do
@@ -832,32 +828,28 @@ runs:
           rsync -vapz -e "ssh -p ${{ inputs.repo_port }}" $i ${{ inputs.repo_user }}@$ip:${{ inputs.repo_dir }}/${branch,,}/x86_64/
         done
 
-    # Keeps only the most recent package
     - name: Clean Old Packages
       if: inputs.update_db == 'true' && success()
       shell: bash
       run: |
-        # Function to send Telegram message
+        #Keeps only the most recent package
         source /tmp/send_telegram_message.sh
-
         # Determine the branch based on the branch type
-        if [ "${{ inputs.branch_type }}" == "stable" ]; then
+        if [[ "${{ inputs.branch_type }}" == "stable" ]]; then
           branch="STABLE"
           db_name="chili-stable"
-        elif [ "${{ inputs.branch_type }}" == "extra" ]; then
+        elif [[ "${{ inputs.branch_type }}" == "extra" ]]; then
           branch="EXTRA"
           db_name="chili-extra"
-        elif [ "${{ inputs.branch_type }}" == "aur" ] || [ "${{ inputs.branch_type }}" == "testing" ]; then
+        elif [[ "${{ inputs.branch_type }}" == "aur" ]] || [[ "${{ inputs.branch_type }}" == "testing" ]]; then
           branch="TESTING"
           db_name="chili-testing"
         else
-          echo -e "${red}Error: Unknown branch type: ${{ inputs.branch_type }} ${reset}"
-          exit 1
+          die "${red}Error: Unknown branch type: ${{ inputs.branch_type }} ${reset}"
         fi
 
-        echo "Branch: $branch"
-        echo "Database name: $db_name"
-        #branch_escaped=$(echo "$branch" | sed 's/[_*[\]()~`>#+\-=|{}.!]/\\&/g')
+        msg_raw "       Branch: $branch"
+        msg_raw "Database name: $db_name"
         branch_escaped="$branch"
 
         message="🧹<b>[step 4/6] Iniciando limpeza de pacotes antigos</b>
@@ -915,11 +907,9 @@ runs:
       if: failure()
       shell: bash
       run: |
-        # Send a Telegram alert if the build fails
-        # Function to send Telegram message
+        #Send a Telegram alert if the build fails
         source /tmp/send_telegram_message.sh
         link_action=https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}
-
         message="🚨 <b>FALHA ao criar pacote:</b>
         <b>Job:</b> <code>#${GITHUB_RUN_NUMBER}</code>
         <b>Pacote:</b> <code>${{ github.event.action }}</code>
@@ -930,9 +920,8 @@ runs:
     - name: Capturar hora de término e calcular duração
       shell: bash
       run: |
-        # Function to send Telegram message
+        #Capturar hora de término e calcular duração
         source /tmp/send_telegram_message.sh
-
         START_TIME="${{ inputs.start_time }}"
         START_TIMESTAMP="${{ inputs.start_timestamp }}"
         END_TIME=$(date +"%Y-%m-%d %H:%M:%S")  # Hora completa
