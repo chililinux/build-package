@@ -215,7 +215,6 @@ runs:
 
         msg_run() {
           local msg="$1"
-          msg="$(sed 's/<[^>]*>//g' <<< "$msg")" # Remove as tags HTML
           echo -e "BIV=>${cyan}running: ${yellow}${msg}${reset}"
           eval "$msg"
         }
@@ -223,14 +222,12 @@ runs:
 
         msg_info() {
           local msg="$1"
-          msg="$(sed 's/<[^>]*>//g' <<< "$msg")" # Remove as tags HTML
           echo -e "BIV=>${yellow}info   : ${cyan}${msg}${reset}"
         }
         export -f msg_info
 
         msg_warning() {
           local msg="$1"
-          msg="$(sed 's/<[^>]*>//g' <<< "$msg")" # Remove as tags HTML
           echo -e "BIV=>${red}warning: ${orange}${msg}${reset}"
         }
         export -f msg_warning
@@ -359,10 +356,9 @@ runs:
         source /tmp/send_telegram_message.sh
         replicate '='
         if gpg --batch --import <<< "${{ inputs.gpg_key }}"; then
-          echo -e "\033[01;32m=>Importação da chave GPG foi bem-sucedida. ${RESET}"
+          msg_ok "Importação da chave GPG foi bem-sucedida"
         else
-          echo -e "\033[01;31m=>Erro na importação da chave GPG. ${RESET}"
-          exit 1
+          die "Erro na importação da chave GPG"
         fi
         replicate '='
 
@@ -468,8 +464,7 @@ runs:
           # Instalar dependências comumente necessárias para builds AUR
           sudo pacman -S --needed base-devel git --noconfirm
         else
-          echo "Invalid branch type specified: ${{ inputs.branch_type }}"
-          exit 1
+          die "Invalid branch type specified: ${{ inputs.branch_type }}"
         fi
 
         # Configure makepkg
@@ -572,8 +567,7 @@ runs:
             msg "Build completed. Checking /home/packages:"
             msg_run 'ls -la /home/packages'
           else
-            msg_warning "Build makepkg fail."
-            exit 1
+            die "Build makepkg fail."
           fi
         else
           # Para pacotes não-AUR
@@ -590,8 +584,7 @@ runs:
               msg "Build completed. Checking /home/packages:"
               msg_run 'ls -la /home/packages'
             else
-              msg_warning "Build makepkg fail."
-              exit 1
+              die "Build makepkg fail."
             fi
            }
 
