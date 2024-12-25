@@ -569,11 +569,11 @@ runs:
           #if makepkg -s --noconfirm --noprogressbar --nodeps; then
           if makepkg -s --noconfirm --noprogressbar; then
             package_name="${{ inputs.package_name }}"
-            full_pkgname=$(find . -type f -name "$package_name*" -print)
-            echo "full_pkgname=$full_pkgname" >> $GITHUV_ENV
+            full_pkgname="$(find . -type f -name "$package_name*" -print)"
+            echo "full_pkgname=$full_pkgname" >> $GITHUB_ENV
             mv "$full_pkgname" /home/packages/ 2>/dev/null || echo 'No package found to move'
             msg "Build completed. Checking /home/packages:"
-            ls -la /home/packages
+            msg_run 'ls -la /home/packages'
           else
             msg_warning "Build makepkg fail."
             exit 1
@@ -588,7 +588,7 @@ runs:
             if makepkg -s --noconfirm --noprogressbar; then
               package_name="${{ inputs.package_name }}"
               full_pkgname=$(find . -type f -name "$package_name*" -print)
-              echo "full_pkgname=$full_pkgname" >> $GITHUV_ENV
+              echo "full_pkgname=$full_pkgname" >> $GITHUB_ENV
               mv "$full_pkgname" /home/packages/ 2>/dev/null || echo 'No package found to move'
               msg "Build completed. Checking /home/packages:"
               ls -la /home/packages
@@ -615,12 +615,13 @@ runs:
             sudo chrootbuild -H -p . -b ${build_branch}
           }
           #make_with_chrootbuild
+          msg_run 'sudo pacman -Sy --quiet'
           make_with_makepkg
         fi
 
         # Executa comando extra, se fornecido
         if [ -n "${{ inputs.extra_command }}" ]; then
-          msg "Executando comando extra: ${{ inputs.extra_command }}"
+          msg_raw "Executando comando extra: ${{ inputs.extra_command }}"
           ${{ inputs.extra_command }}
         fi
 
