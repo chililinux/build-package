@@ -581,17 +581,17 @@ runs:
         else
           # Para pacotes não-AUR
           gitfolder=$(find . -name "PKGBUILD" -exec dirname {} \;)
-          cd $gitfolder
+          msg_run "cd $gitfolder"
 
           make_with_makepkg() {
-            msg "makepkg -s --noconfirm --noprogressbar ${reset}"
             if makepkg -s --noconfirm --noprogressbar; then
-              package_name="${{ inputs.package_name }}"
-              full_pkgname=$(find . -type f -name "$package_name*" -print)
+              pkgname="${{ inputs.package_name }}"
+              full_pkgname=$(find . -type f -iname "$pkgname*" -print)
+              msg_raw "full_pkgname : $full_pkgname"
               echo "full_pkgname=$full_pkgname" >> $GITHUB_ENV
-              mv "$full_pkgname" /home/packages/ 2>/dev/null || echo 'No package found to move'
+              msg_run "mv $full_pkgname /home/packages/ 2>/dev/null" || msg_warning 'No package found to move'
               msg "Build completed. Checking /home/packages:"
-              ls -la /home/packages
+              msg_run 'ls -la /home/packages'
             else
               msg_warning "Build makepkg fail."
               exit 1
@@ -627,7 +627,7 @@ runs:
 
         # Debug: Mostrar conteúdo do diretório após o build
         msg "Directory contents after build:"
-        msg_run 'ls -la'
+        msg_run 'ls -la $PWD'
         msg "Contents of /home/packages:"
         msg_run 'ls -la /home/packages'
         msg "Contents of /home/sources:"
@@ -639,7 +639,7 @@ runs:
         # Sign Package
         source /tmp/send_telegram_message.sh
         msg_run 'ls -lah'
-        if [ "${{ inputs.build_env }}" == "aur" ]; then
+        if [[ "${{ inputs.build_env }}" == "aur" ]]; then
           msg_run 'cd /home/packages'
         else
           gitfolder=$(find . -name "*.pkg.tar.zst" -exec dirname {} \;)
