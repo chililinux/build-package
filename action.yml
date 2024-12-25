@@ -621,10 +621,9 @@ runs:
       run: |
         # Sign Package
         source /tmp/send_telegram_message.sh
+        replicate '#'
         msg_run 'cd /home/packages'
-        replicate '#'
         msg_run "ls -lah $PWD"
-        replicate '#'
 
         # Assina todos os pacotes encontrados
         # Import GPG key
@@ -637,12 +636,11 @@ runs:
               msg_warning "Erro ao assinar o pacote: $p"
             fi
           done
-          msg_run "ls -lah $PWD"
-          msg_raw "Listagem de arquivos .sig gerados:"
-          msg_run 'ls -lah *.sig*' || msg_warning "Nenhum arquivo .sig encontrado"
+          msg_run 'ls -lah $PWD *.sig*' || msg_warning "Nenhum arquivo .sig encontrado"
         else
           die "Erro na importação da chave GPG."
         fi
+        replicate '#'
 
     - name: Generate checksums
       shell: bash
@@ -654,15 +652,13 @@ runs:
         msg_run "ls -lah $PWD"
 
         for p in *pkg.tar.zst; do
-          if [[ -f "$i" ]]; then
-            msg_raw "Gerando MD5 para: $i"
-            md5sum "$i"     >> "$i.md5"
-            msg_raw "Gerando MD5 para: $i.sig"
-            md5sum "$i.sig" >> "$i.sig.md5"
-            msg_raw "MD5 gerado para: $i.sig"
-          fi
+          msg_raw "Gerando MD5 para: $p"
+          md5sum "$p"     >> "$p.md5"
+          msg_raw "Gerando MD5 para: $p.sig"
+          md5sum "$p.sig" >> "$p.sig.md5"
+          msg_raw "MD5 gerado para: $p.sig"
         done
-        msg_run 'ls -l *.md5' || msg_warning 'Nenhum arquivo MD5 encontrado'
+        msg_run 'ls -lah *.md5' || msg_warning 'Nenhum arquivo MD5 encontrado'
         replicate '#'
 
     - name: Publish Package on GitHub
