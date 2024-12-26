@@ -1,7 +1,3 @@
-# -*- coding: utf-8 -*-
-#
-#  action.yml
-#  Created: 2024/09/15 - 08:10
 #  Altered: 2024/10/27 - 12:26
 #
 #  Copyright (c) 2024-2024, Vilmar Catafesta <vcatafesta@gmail.com>
@@ -559,9 +555,7 @@ runs:
           if makepkg -s --noconfirm --noprogressbar; then
             pkgname="${{ inputs.package_name }}"
             full_pkgname="$(find . -type f -iname "$pkgname*.pkg.tar.zst" -print)"
-            pkg_basename="$(basename $full_pkgname)"
             echo "full_pkgname=$full_pkgname" >> $GITHUB_ENV
-            echo "PKG_BASENAME=$pkg_basename" >> $GITHUB_ENV
             msg_run "cp -f $full_pkgname /home/packages/ 2>/dev/null" || msg_warning 'No package found to copy'
             msg_raw 'Build completed.'
             msg_run 'ls -la /home/packages'
@@ -830,17 +824,11 @@ runs:
       id: set-tag-name
       shell: bash
       run: |
-        FILENAME="${{env.PKG_BASENAME}}"
+        FILENAME="${{env.PKGNAME_BASENAME}}"
         TAG_NAME=$(echo "$FILENAME" | grep -oP '\d{8}')-$(date +%H%M)
-        echo "PKG_TAG_NAME=$TAG_NAME" >> $GITHUB_ENV
-
-    - name: Set Package path
-      if: ${{ inputs.teste_input != true }}
-      shell: bash
-      run: |
-        # Set outputs
-        echo "pkg_path=${{env.full_pkgname}}" >> "$GITHUB_OUTPUT"
-        echo "PKG_PATH=${{env.full_pkgname}}" >> "$GITHUB_ENV"
+        echo "PKG_TAG_NAME=$TAG_NAME"         >> $GITHUB_ENV
+        echo "pkg_path=${{env.full_pkgname}}" >> $GITHUB_OUTPUT
+        echo "PKG_PATH=${{env.full_pkgname}}" >> $GITHUB_ENV
 
     - name: Prepare Package for release (7z)
       id: prepare-package
@@ -924,10 +912,10 @@ runs:
         generate_release_notes: true
         body: |
           - **Data e Hora        :** ${{ env.START_TIME }}
-          - **Arquivo PKG        :** ${{ env.PKG_BASENAME }}
-          - **Arquivo SIG        :** ${{ env.PKG_BASENAME }}.sig
-          - **Arquivo MD5        :** ${{ env.PKG_BASENAME }}.md5
-          - **Arquivo SIG.MD5    :** ${{ env.PKG_BASENAME }}.sig.md5
+          - **Arquivo PKG        :** ${{ env.PKGNAME_BASENAME }}
+          - **Arquivo SIG        :** ${{ env.PKGNAME_BASENAME }}.sig
+          - **Arquivo MD5        :** ${{ env.PKGNAME_BASENAME }}.md5
+          - **Arquivo SIG.MD5    :** ${{ env.PKGNAME_BASENAME }}.sig.md5
           - **Nome do Repositório:** ${{ env.REPO_NAME }}
         draft: false
         prerelease: false
