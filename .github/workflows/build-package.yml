@@ -89,7 +89,7 @@ jobs:
     container:
       #image: talesam/community-build:1.4
       #image: talesam/community-build:1.5.1
-      image: vcatafesta/build-iso:1.5.1
+      image: vcatafesta/build-iso:1.6
       options: --privileged
     steps:
       - name: Capturar hora de início do workflow
