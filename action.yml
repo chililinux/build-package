@@ -576,6 +576,7 @@ runs:
         msg_run "ls -la $PWD"
         replicate '#'
 
+        install_dependencies
         #make_with_chrootbuild
         #make_with_yay
         make_with_makepkg
