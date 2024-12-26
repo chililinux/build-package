@@ -325,10 +325,10 @@ runs:
         msg "$(env | sort)"
         replicate '='
 
-#    - name: Config ambiente de build - Atualiza e instala dependências necessárias
-#      shell: bash
-#      run: |
-#        #Config ambiente de build - Atualiza e instala dependências necessárias
+    - name: Config ambiente de build - Atualiza e instala dependências necessárias
+      shell: bash
+      run: |
+        #Config ambiente de build - Atualiza e instala dependências necessárias
 #        #sudo pacman -Syu --quiet --needed --noconfirm \
 #        #   base-devel \
 #        #   cmake \
@@ -341,7 +341,7 @@ runs:
 #        #   duf \
 #        #   curl \
 #        #   tree
-#        sudo pacman -Syu --quiet --needed --noconfirm
+        sudo pacman -Syu --quiet --needed --noconfirm
 
     - name: Setup TMATE Session
       uses: mxschmitt/action-tmate@v3
