@@ -872,7 +872,7 @@ runs:
         # Verifica se o tamanho é maior que 2000 MB (2000 * 1024 * 1024 bytes)
         if (( file_size > 2000 * 1024 * 1024 )); then
           msg_info "O arquivo é maior que 2000 MB. Compactando e dividindo..."
-          7z a -v2000m "${release}.7z" "${{env.full_pkgname}" # Compacta e divide em partes de 2000 MB
+          7z a -v2000m "${release}.7z" "${{env.full_pkgname}}" # Compacta e divide em partes de 2000 MB
           upload_path="${release}.7z*"
         else
           msg_info "O arquivo não é maior que 2000 MB. Não será compactado."
