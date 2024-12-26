@@ -609,14 +609,14 @@ runs:
             msg_info '# Executar chrootbuild com o branch determinado'
             msg_run "sudo chrootbuild -H -p . -b ${build_branch}"
           }
-          msg_run 'sudo pacman -Sy --quiet'
-          #make_with_chrootbuild
+        fi
 
-          if [[ "${{ inputs.build_env }}" == "aur" ]]; then
-            make_with_yay
-          else
-            make_with_makepkg
-          fi
+        msg_run 'sudo pacman -Sy --quiet'
+        #make_with_chrootbuild
+        if [[ "${{ inputs.build_env }}" == "aur" ]]; then
+          make_with_yay
+        else
+          make_with_makepkg
         fi
 
         msg_info '# Executa comando extra, se fornecido'
