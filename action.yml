@@ -412,11 +412,11 @@ runs:
 
         [biglinux-stable]
         SigLevel = PackageRequired
-        Server = https://repo.biglinux.com.br/stable/$arch' | sudo tee -a /etc/pacman.conf /etc/chrootbuild/pacman.conf.x86_64
+        Server = https://repo.biglinux.com.br/stable/$arch
 
         [biglinux-testing]
         SigLevel = PackageRequired
-        Server = https://repo.biglinux.com.br/testing/$arch
+        Server = https://repo.biglinux.com.br/testing/$arch' | sudo tee -a /etc/pacman.conf /etc/chrootbuild/pacman.conf.x86_64
 
         if [ "${{ inputs.build_env }}" == "aur" ] || [ "${{ inputs.branch_type }}" == "aur" ]; then
           msg_raw "Configurando para pacote AUR: ${{ inputs.package_name }}"
