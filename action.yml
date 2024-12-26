@@ -271,7 +271,7 @@ runs:
         msg_raw "Last commit hash: $COMMIT_HASH"
 
         msg_info '# Buscar informações do commit remoto'
-        msg_run "git fetch $REPO_URL $COMMIT_HASH"
+        git fetch $REPO_URL $COMMIT_HASH
 
         msg_info '# Obter a mensagem do commit a partir do hash'
         COMMIT_MESSAGE="$(git log -1 --format=%B $COMMIT_HASH)"
