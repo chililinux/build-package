@@ -383,7 +383,7 @@ runs:
         replicate '-'
 
         msg_info "#Remove existing BigLinux repositories"
-        msg_run 'sudo sed -i '/biglinux/,$d' /etc/pacman.conf'
+        sudo sed -i '/biglinux/,$d' /etc/pacman.conf
 
         msg_info "#Add appropriate repositories based on build environment"
         if [ "${{ inputs.build_env }}" == "testing" ] || [ "$BRANCH_TYPE" == "testing" ]; then
@@ -448,12 +448,12 @@ runs:
         elif [ "${{ inputs.build_env }}" == "aur" ] || [ "${{ inputs.branch_type }}" == "aur" ]; then
           msg_raw "Configurando para pacote AUR: ${{ inputs.package_name }}"
           msg_info '#Configurações específicas para AUR'
-          msg_run "sudo sed -i 's/^#MAKEFLAGS="-j2"/MAKEFLAGS="-j$(nproc)"/' /etc/makepkg.conf"
-          msg_run "sudo sed -i 's/^#BUILDDIR/BUILDDIR/' /etc/makepkg.conf"
-          msg_run "sudo sed -i 's/^#PKGDEST/PKGDEST/' /etc/makepkg.conf"
+          sudo sed -i 's/^#MAKEFLAGS="-j2"/MAKEFLAGS="-j$(nproc)"/' /etc/makepkg.conf
+          sudo sed -i 's/^#BUILDDIR/BUILDDIR/' /etc/makepkg.conf
+          sudo sed -i 's/^#PKGDEST/PKGDEST/' /etc/makepkg.conf
 
           msg_info '#Habilitar o repositório multilib (necessário para alguns pacotes AUR)'
-          msg_run "sudo sed -i '/\[multilib\]/,/Include/s/^#//' /etc/pacman.conf"
+          sudo sed -i '/\[multilib\]/,/Include/s/^#//' /etc/pacman.conf
 
           msg_info '#Atualizar os repositórios após as mudanças'
           msg_run "sudo pacman -Sy"
