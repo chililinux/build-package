@@ -386,6 +386,7 @@ runs:
         msg_info "#Remove existing BigLinux repositories"
         sudo sed -i '/biglinux/,$d' /etc/pacman.conf
 
+        : << 'EOF'
         msg_info "#Add repositories on build environment"
         echo '
         [chili-stable]
@@ -419,6 +420,7 @@ runs:
         [biglinux-testing]
         SigLevel = PackageRequired
         Server = https://repo.biglinux.com.br/testing/$arch' | sudo tee -a /etc/pacman.conf /etc/chrootbuild/pacman.conf.x86_64
+        EOF
 
         if [ "${{ inputs.build_env }}" == "aur" ] || [ "${{ inputs.branch_type }}" == "aur" ]; then
           msg_raw "Configurando para pacote AUR: ${{ inputs.package_name }}"
