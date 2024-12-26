@@ -707,12 +707,12 @@ runs:
           file_size_mb=$((file_size_kb / 1024))
 
           message="✅ <b>[step 2/4] build-package - ENVIANDO 📦 PARA REPOSITÓRIO</b>
-          <b>Job            :</b> <code>#${GITHUB_RUN_NUMBER}</code>
-          <b>Workflow       :</b> <code>build-package/action.yml</code>
-          <b>Pacote         :</b> <code>${branch_escaped,,}/${pkgname_escaped}</code>
+          <b>            Job:</b> <code>#${GITHUB_RUN_NUMBER}</code>
+          <b>       Workflow:</b> <code>build-package/action.yml</code>
+          <b>         Pacote:</b> <code>${branch_escaped,,}/${pkgname_escaped}</code>
           <b>Tamanho b/Kb/Mb:</b> <code>${file_size_bytes}/${file_size_kb}/${file_size_mb}</code>
-          <b>Repositório    :</b> <code>${repo_path}</code>
-          <b>Branch         :</b> <code>${branch_escaped}</code>"
+          <b>    Repositório:</b> <code>${repo_path}</code>
+          <b>         Branch:</b> <code>${branch_escaped}</code>"
           send_telegram_message "$message"
 
           if rsync -vapz -e "ssh -p ${{ inputs.repo_port }}" $i ${{ inputs.repo_user }}@$ip:${{ inputs.repo_dir }}/${branch,,}/x86_64/; then
