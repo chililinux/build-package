@@ -507,6 +507,7 @@ runs:
             msg_run 'cd source_repo'
           fi
         fi
+        gitfolder=$(find -type f -name PKGBUILD | sed 's/PKGBUILD//')
 
         msg_info '# Debug: Show current directory and contents'
         replicate '-'
@@ -516,6 +517,10 @@ runs:
         # Install all dependencies using yay
         install_dependencies() {
           # Extract dependencies from PKGBUILD
+          if [[ -z "$gitfolder" ]]; then
+            die "ixe... Deu ruim, PKGBUILD não localizado!"
+          fi
+          msg_run "cd $gitfolder"
           source PKGBUILD
 
           msg_info "depends    : ${depends[@]}"
@@ -586,9 +591,11 @@ runs:
           msg_info "makedepends: ${makedepends[@]}"
           die "Fail for install dependencies with yay"
         fi
+        pushd "$gitfolder" || true
         #make_with_chrootbuild
         #make_with_yay
         make_with_makepkg
+        popd || true
 
         msg_info '# Executa comando extra, se fornecido'
         if [[ -n "${{ inputs.extra_command }}" ]]; then
