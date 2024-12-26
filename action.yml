@@ -508,116 +508,82 @@ runs:
         replicate '#'
 
         msg_info '# Create and set permissions for $PKGDEST and $SRCDEST'
-        msg_run 'sudo mkdir -p /home/packages /home/sources'
-        msg_run 'sudo chown builduser:builduser /home/packages /home/sources'
+        msg_run 'sudo mkdir -p /home/packages /home/sources /tmp/makepkg'
+        msg_run 'sudo chown builduser:builduser /home/packages /home/sources /tmp/makepkg'
 
-        if [[ "${{ inputs.build_env }}" == "aur" ]]; then
-          msg_run "cd ${{ inputs.aur_package_dir }}"
-          msg_raw "Construindo pacote AUR       : ${{ inputs.package_name }}"
-          msg_raw "Current AUR package directory: $PWD"
-          replicate '#'
-          msg_run "ls -la $PWD"
-          replicate '#'
+        # Extract dependencies from PKGBUILD
+        source PKGBUILD
 
-          msg_info '# Give permissions to builduser for the current directory'
-          msg_run 'sudo chown -R builduser:builduser . '
-
-          msg_info '# Create temporary directory for makepkg'
-          msg_run 'sudo mkdir -p /tmp/makepkg'
-          msg_run 'sudo chown builduser:builduser /tmp/makepkg'
-
-          # Extract dependencies from PKGBUILD
-          #depends=$(grep -E "^depends=\(" PKGBUILD | sed 's/depends=(//' | sed 's/)$//' | tr -d "'")
-          #makedepends=$(grep -E "^makedepends=\(" PKGBUILD | sed 's/makedepends=(//' | sed 's/)$//' | tr -d "'")
-          # Instalar dependências
-          #msg_info "Installing dependencies..."
-          #sudo yay -Sy --asdeps --nodeps $depends $makedepends --noconfirm
-
-          make_with_makepkg() {
-            msg_info "Building AUR package: ${{ inputs.package_name }}"
-            if makepkg -s --noconfirm --noprogressbar; then
-              pkgname="${{ inputs.package_name }}"
-              full_pkgname="$(find . -type f -iname "$pkgname*.pkg.tar.zst" -print)"
-              echo "full_pkgname=$full_pkgname" >> $GITHUB_ENV
-              msg_run "cp -f $full_pkgname /home/packages/ 2>/dev/null" || msg_warning 'No package found to copy'
-              msg_raw 'Build completed.'
-              msg_run 'ls -la /home/packages'
-            else
-              die 'Build with makepkg fail.'
+        # Install all dependencies using yay
+        install_dependencies() {
+          if [[ -n "$depends" ]] || [[ -n "$makedepends" ]]; then
+            msg_info "Installing all dependencies..."
+            if ! yay -Sy --asdeps --needed --noanswerdiff --noconfirm "${depends[@]}" "${makedepends[@]}"; then
+              return 1
             fi
-          }
+          fi
+          return 0
+        }
 
-          make_with_yay() {
-            if yay -Sy --asdeps --needed --noanswerdiff --noconfirm; then
-              pkgname="${{ inputs.package_name }}"
-              full_pkgname="$(find . -type f -iname "$pkgname*.pkg.tar.zst" -print)"
-              msg_raw "full_pkgname : $full_pkgname"
-              echo "full_pkgname=$full_pkgname" >> $GITHUB_ENV
-              msg_run "mv $full_pkgname /home/packages/ 2>/dev/null" || msg_warning 'No package found to move'
-              msg_ok "Build completed. Checking /home/packages:"
-              msg_run 'ls -la /home/packages'
-            else
-              die "Build with yay fail."
-            fi
-           }
-        else
-          msg_info '# Para pacotes não-AUR'
-          gitfolder=$(find . -name "PKGBUILD" -exec dirname {} \;)
-          msg_run "cd $gitfolder"
-
-          make_with_makepkg() {
-            if makepkg -s --noconfirm --noprogressbar; then
-              pkgname="${{ inputs.package_name }}"
-              full_pkgname="$(find . -type f -iname "$pkgname*.pkg.tar.zst" -print)"
-              msg_raw "full_pkgname : $full_pkgname"
-              echo "full_pkgname=$full_pkgname" >> $GITHUB_ENV
-              msg_run "mv $full_pkgname /home/packages/ 2>/dev/null" || msg_warning 'No package found to move'
-              msg_ok "Build completed. Checking /home/packages:"
-              msg_run 'ls -la /home/packages'
-            else
-              die "Build with makepkg fail."
-            fi
-           }
-
-          make_with_yay() {
-            if yay -Sy --asdeps --needed --noanswerdiff --noconfirm; then
-              pkgname="${{ inputs.package_name }}"
-              full_pkgname="$(find . -type f -iname "$pkgname*.pkg.tar.zst" -print)"
-              msg_raw "full_pkgname : $full_pkgname"
-              echo "full_pkgname=$full_pkgname" >> $GITHUB_ENV
-              msg_run "mv $full_pkgname /home/packages/ 2>/dev/null" || msg_warning 'No package found to move'
-              msg_ok "Build completed. Checking /home/packages:"
-              msg_run 'ls -la /home/packages'
-            else
-              die "Build with makepkg fail."
-            fi
-           }
-
-          make_with_chrootbuild() {
-            msg_info '# Ensure architecture is set to x86_64'
-            sed -i "/^arch=/c\arch=('x86_64')" PKGBUILD
-            msg_info "Build for x86_64"
-
-            msg_info '# Determinar o branch de build'
-            if [ "${{ inputs.build_env }}" == "extra" ]; then
-              build_branch="testing"
-              msg_info "Ambiente de build é 'extra', usando branch 'testing' para chrootbuild"
-            else
-              build_branch="${{ inputs.branch_type }}"
-            fi
-
-            msg_info '# Executar chrootbuild com o branch determinado'
-            msg_run "sudo chrootbuild -H -p . -b ${build_branch}"
-          }
+        # Call the installation function
+        if ! install_dependencies; then
+          die "Failed to install dependencies"
         fi
 
-        msg_run 'sudo pacman -Sy --quiet'
+        make_with_makepkg() {
+          if makepkg -s --noconfirm --noprogressbar --nodeps --skipchecksums; then
+            pkgname="${{ inputs.package_name }}"
+            full_pkgname="$(find . -type f -iname "$pkgname*.pkg.tar.zst" -print)"
+            msg_raw "full_pkgname : $full_pkgname"
+            echo "full_pkgname=$full_pkgname" >> $GITHUB_ENV
+            msg_run "mv $full_pkgname /home/packages/ 2>/dev/null" || msg_warning 'No package found to move'
+            msg_ok "Build completed. Checking /home/packages:"
+            msg_run 'ls -la /home/packages'
+          else
+            die "Build with makepkg fail."
+          fi
+        }
+
+        make_with_yay() {
+          if yay -Sy --asdeps --needed --noanswerdiff --noconfirm; then
+            pkgname="${{ inputs.package_name }}"
+            full_pkgname="$(find . -type f -iname "$pkgname*.pkg.tar.zst" -print)"
+            msg_raw "full_pkgname : $full_pkgname"
+            echo "full_pkgname=$full_pkgname" >> $GITHUB_ENV
+            msg_run "mv $full_pkgname /home/packages/ 2>/dev/null" || msg_warning 'No package found to move'
+            msg_ok "Build completed. Checking /home/packages:"
+            msg_run 'ls -la /home/packages'
+          else
+            die "Build with makepkg fail."
+          fi
+        }
+
+        make_with_chrootbuild() {
+          msg_info '# Ensure architecture is set to x86_64'
+          sed -i "/^arch=/c\arch=('x86_64')" PKGBUILD
+          msg_info "Build for x86_64"
+
+          msg_info '# Determinar o branch de build'
+          if [ "${{ inputs.build_env }}" == "extra" ]; then
+            build_branch="testing"
+            msg_info "Ambiente de build é 'extra', usando branch 'testing' para chrootbuild"
+          else
+            build_branch="${{ inputs.branch_type }}"
+          fi
+
+          msg_info '# Executar chrootbuild com o branch determinado'
+          msg_run "sudo chrootbuild -H -p . -b ${build_branch}"
+        }
+
+        msg_raw "Construindo pacote       : ${{ inputs.package_name }}"
+        msg_raw "Current package directory: $PWD"
+        replicate '#'
+        msg_run "ls -la $PWD"
+        replicate '#'
+
         #make_with_chrootbuild
-        if [[ "${{ inputs.build_env }}" == "aur" ]]; then
-          make_with_yay
-        else
-          make_with_makepkg
-        fi
+        #make_with_yay
+        make_with_makepkg
 
         msg_info '# Executa comando extra, se fornecido'
         if [[ -n "${{ inputs.extra_command }}" ]]; then
