@@ -827,8 +827,8 @@ runs:
         FILENAME="${{env.PKGNAME_BASENAME}}"
         TAG_NAME=$(echo "$FILENAME" | grep -oP '\d{8}')-$(date +%H%M)
         echo "PKG_TAG_NAME=$TAG_NAME"         >> $GITHUB_ENV
-        echo "pkg_path=${{env.full_pkgname}}" >> $GITHUB_OUTPUT
-        echo "PKG_PATH=${{env.full_pkgname}}" >> $GITHUB_ENV
+        echo "pkg_path=/home/packages/${{env.PKGNAME_BASENAME}}" >> $GITHUB_OUTPUT
+        echo "PKG_PATH=/home/packages/${{env.PKGNAME_BASENAME}}" >> $GITHUB_ENV
 
     - name: Prepare Package for release (7z)
       id: prepare-package
@@ -852,20 +852,20 @@ runs:
           -d parse_mode="HTML"
         replicate '='
         msg_run "ls -lah $PWD"
-        release=$(basename "${{env.full_pkgname}}" .pkg.tar.zst)
+        release=$(basename "${{env.PKG_PATH}}" .pkg.tar.zst)
         release_name="${release}"
 
         # Obtém o tamanho do arquivo em bytes
-        file_size=$(stat -c%s "${{env.full_pkgname}}")
+        file_size=$(stat -c%s "${{env.PKG_PATH}}")
 
         # Verifica se o tamanho é maior que 2000 MB (2000 * 1024 * 1024 bytes)
         if (( file_size > 2000 * 1024 * 1024 )); then
           msg_info "O arquivo é maior que 2000 MB. Compactando e dividindo..."
-          7z a -v2000m "${release}.7z" "${{env.full_pkgname}}" # Compacta e divide em partes de 2000 MB
+          7z a -v2000m "${release}.7z" "${{env.PKG_PATH}}" # Compacta e divide em partes de 2000 MB
           upload_path="${release}.7z*"
         else
           msg_info "O arquivo não é maior que 2000 MB. Não será compactado."
-          upload_path="${{env.full_pkgname}}"
+          upload_path="${{env.PKG_PATH}}"
         fi
 
         echo "release=${release}"         >> "$GITHUB_OUTPUT"
@@ -877,11 +877,11 @@ runs:
         msg_run "ls -lah $PWD"
         replicate '='
         # Debug
-        msg_info "full_pkgname (original): ${{env.full_pkgname}}"
+        msg_info "full_pkgname (original): ${{env.PKG_PATH}}"
         msg_info "Upload Path            : ${upload_path}"
-        msg_info "full_pkgname (sig)     : ${{env.full_pkgname}}.sig"
-        msg_info "full_pkgname (md5)     : ${{env.full_pkgname}}.md5"
-        msg_info "full_pkgname (sig.md5) : ${{env.full_pkgname}}.sig.md5"
+        msg_info "full_pkgname (sig)     : ${{env.PKG_PATH}}.sig"
+        msg_info "full_pkgname (md5)     : ${{env.PKG_PATH}}.md5"
+        msg_info "full_pkgname (sig.md5) : ${{env.PKG_PATH}}.sig.md5"
         msg_info "release                : ${release}"
         msg_info "release_name           : ${release_name}"
         popd || true
@@ -905,9 +905,9 @@ runs:
       uses: softprops/action-gh-release@v1
       with:
         files: |
-          ${{ env.full_pkgname }}.sig
-          ${{ env.full_pkgname }}.md5
-          ${{ env.full_pkgname }}.sig.md5
+          ${{ env.PKG_PATH }}.sig
+          ${{ env.PKG_PATH }}.md5
+          ${{ env.PKG_PATH }}.sig.md5
           ${{ steps.prepare-package.outputs.upload_path }}
         tag_name: ${{ env.ISO_TAG_NAME }}
         name: ${{ steps.prepare-package.outputs.release_name }}
