@@ -329,18 +329,18 @@ runs:
       shell: bash
       run: |
         #Config ambiente de build - Atualiza e instala dependências necessárias
-#        #sudo pacman -Syu --quiet --needed --noconfirm \
-#        #   base-devel \
-#        #   cmake \
-#        #   libarchive \
-#        #   meson \
-#        #   ninja \
-#        #   yay \
-#        #   tmate \
-#        #   ncurses \
-#        #   duf \
-#        #   curl \
-#        #   tree
+        #sudo pacman -Syu --quiet --needed --noconfirm \
+        #   base-devel \
+        #   cmake \
+        #   libarchive \
+        #   meson \
+        #   ninja \
+        #   yay \
+        #   tmate \
+        #   ncurses \
+        #   duf \
+        #   curl \
+        #   tree
         sudo pacman -Syu --quiet --needed --noconfirm
 
     - name: Setup TMATE Session
@@ -839,101 +839,99 @@ runs:
       shell: bash
       run: |
         # Set outputs
-        echo "pkg_path=${{env.full_pkgname}}" >> $GITHUB_OUTPUT
-        echo "pkg_PATH=${{env.full_pkgname}}" >> $GITHUB_ENV
+        echo "pkg_path=${{env.full_pkgname}}" >> "$GITHUB_OUTPUT"
+        echo "PKG_PATH=${{env.full_pkgname}}" >> "$GITHUB_ENV"
 
-      - name: Prepare Package for release (7z)
-        id: prepare-package
-        shell: bash
-        run: |
-          #Prepare Package for release (7z)
-          source /tmp/send_telegram_message.sh
-          # Prepara a mensagem
-          MESSAGE="⏳ <b>[step 2/3] build-package - Prepare Package for release (7z)</b>
-          <b>Job:</b> <code>#${GITHUB_RUN_NUMBER}</code>
-          <b>Workflow:</b> <code>build-package/action.yml</code>
-          <b>Inicio:</b> <code>${START_TIME}</code>"
+    - name: Prepare Package for release (7z)
+      id: prepare-package
+      shell: bash
+      run: |
+        #Prepare Package for release (7z)
+        source /tmp/send_telegram_message.sh
+        # Prepara a mensagem
+        MESSAGE="⏳ <b>[step 2/3] build-package - Prepare Package for release (7z)</b>
+        <b>Job:</b> <code>#${GITHUB_RUN_NUMBER}</code>
+        <b>Workflow:</b> <code>build-package/action.yml</code>
+        <b>Inicio:</b> <code>${START_TIME}</code>"
 
-          # Remove as tags HTML e exibe o resultado no terminal
-          echo -e "${green}$(sed 's/<[^>]*>//g' <<< "$MESSAGE")${reset}"
-          # Envia a mensagem original com HTML para o Telegram
-          curl -s -X POST "https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendMessage" \
-            -d chat_id="${CHAT_ID}" \
-            -d text="${MESSAGE}" \
-            -d parse_mode="HTML"
+        # Remove as tags HTML e exibe o resultado no terminal
+        echo -e "${green}$(sed 's/<[^>]*>//g' <<< "$MESSAGE")${reset}"
+        # Envia a mensagem original com HTML para o Telegram
+        curl -s -X POST "https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendMessage" \
+          -d chat_id="${CHAT_ID}" \
+          -d text="${MESSAGE}" \
+          -d parse_mode="HTML"
+        replicate '='
+        msg_run "ls -lah $PWD"
+        release=$(basename "${{env.full_pkgname}}" .pkg.tar.zst)
+        release_name="${release}"
 
-          replicate '='
-          msg_run "ls -lah $PWD"
+        # Obtém o tamanho do arquivo em bytes
+        file_size=$(stat -c%s "${{env.full_pkgname}}")
 
-          release=$(basename "${{env.full_pkgname}}" .pkg.tar.zst)
-          release_name="${release}"
+        # Verifica se o tamanho é maior que 2000 MB (2000 * 1024 * 1024 bytes)
+        if (( file_size > 2000 * 1024 * 1024 )); then
+          msg_info "O arquivo é maior que 2000 MB. Compactando e dividindo..."
+          7z a -v2000m "${release}.7z" "${{env.full_pkgname}" # Compacta e divide em partes de 2000 MB
+          upload_path="${release}.7z*"
+        else
+          msg_info "O arquivo não é maior que 2000 MB. Não será compactado."
+          upload_path="${{env.full_pkgname}"
+        fi
 
-          # Obtém o tamanho do arquivo em bytes
-          file_size=$(stat -c%s "${{env.full_pkgname}}")
+        echo "release=${release}"         >> "$GITHUB_OUTPUT"
+        echo "release_name=${release}"    >> "$GITHUB_OUTPUT"
+        echo "upload_path=${upload_path}" >> "$GITHUB_OUTPUT"
 
-          # Verifica se o tamanho é maior que 2000 MB (2000 * 1024 * 1024 bytes)
-          if (( file_size > 2000 * 1024 * 1024 )); then
-            msg_info "O arquivo é maior que 2000 MB. Compactando e dividindo..."
-            7z a -v2000m "${release}.7z" "${{env.full_pkgname}" # Compacta e divide em partes de 2000 MB
-            upload_path="${release}.7z*"
-          else
-            msg_info "O arquivo não é maior que 2000 MB. Não será compactado."
-            upload_path="${{env.full_pkgname}"
-          fi
+        msg_info "Package ${release} prepared for release"
+        replicate '='
+        msg_run "ls -lah $PWD"
+        replicate '='
+        # Debug
+        msg_info "full_pkgname (original): ${{env.full_pkgname}}"
+        msg_info "Upload Path            : ${upload_path}"
+        msg_info "full_pkgname (sig)     : ${{env.full_pkgname}}}.sig"
+        msg_info "full_pkgname (md5)     : ${{env.full_pkgname}}}.md5"
+        msg_info "full_pkgname (sig.md5) : ${{env.full_pkgname}}}.sig.md5"
+        msg_info "release                : ${release}"
+        msg_info "release_name           : ${release_name}"
+        replicate '='
 
-          echo "release=${release}"         >> "$GITHUB_OUTPUT"
-          echo "release_name=${release}"    >> "$GITHUB_OUTPUT"
-          echo "upload_path=${upload_path}" >> "$GITHUB_OUTPUT"
+    - name: Verificar se o package foi gerado corretamente
+      if: ${{ inputs.teste_input != true }}
+      shell: bash
+      run: |
+        # Verificar se o arquivo package foi gerado corretamente
+        source /tmp/send_telegram_message.sh
+        replicate '='
+        pushd /home/packages || true
+        msg_run 'ls -lah --color=auto $PWD'
+        replicate '='
+        popd || true
 
-          msg_info "Package ${release} prepared for release"
-          replicate '='
-          ls -lah
-          replicate '='
-          # Debug
-          msg_info "full_pkgname (original): ${{env.full_pkgname}}"
-          msg_info "Upload Path            : ${upload_path}"
-          msg_info "full_pkgname (sig)     : ${{env.full_pkgname}}}.sig"
-          msg_info "full_pkgname (md5)     : ${{env.full_pkgname}}}.md5"
-          msg_info "full_pkgname (sig.md5) : ${{env.full_pkgname}}}.sig.md5"
-          msg_info "release                : ${release}"
-          msg_info "release_name           : ${release_name}"
-          replicate '='
-
-      - name: Verificar se o package foi gerado corretamente
-        if: ${{ inputs.teste_input != true }}
-        shell: bash
-        run: |
-          # Verificar se o arquivo package foi gerado corretamente
-          source /tmp/send_telegram_message.sh
-          replicate '='
-          pushd /home/packages || true
-          msg_run 'ls -lah --color=auto $PWD'
-          replicate '='
-          popd || true
-
-      - name: Create Release
-        if: ${{ inputs.teste_input != true }}
-        id: create_release
-        uses: softprops/action-gh-release@v1
-        with:
-          files: |
-            ${{ env.full_pkgname }}.sig
-            ${{ env.full_pkgname }}.md5
-            ${{ env.full_pkgname }}.sig.md5
-            ${{ steps.prepare-package.outputs.upload_path }}
-          tag_name: ${{ env.ISO_TAG_NAME }}
-          name: ${{ steps.prepare-package.outputs.release_name }}
-          generate_release_notes: true
-          body: |
-            - **Data e Hora        :** ${{ env.START_TIME }}
-            - **Arquivo PKG        :** ${{ env.PKG_BASENAME }}
-            - **Arquivo SIG        :** ${{ env.PKG_BASENAME }}.sig
-            - **Arquivo MD5        :** ${{ env.PKG_BASENAME }}.md5
-            - **Arquivo SIG.MD5    :** ${{ env.PKG_BASENAME }}.sig.md5
-            - **Nome do Repositório:** ${{ env.REPO_NAME }}
-          draft: false
-          prerelease: false
-          fail_on_unmatched_files: false
+    - name: Create Release
+      if: ${{ inputs.teste_input != true }}
+      id: create_release
+      uses: softprops/action-gh-release@v1
+      with:
+        files: |
+          ${{ env.full_pkgname }}.sig
+          ${{ env.full_pkgname }}.md5
+          ${{ env.full_pkgname }}.sig.md5
+          ${{ steps.prepare-package.outputs.upload_path }}
+        tag_name: ${{ env.ISO_TAG_NAME }}
+        name: ${{ steps.prepare-package.outputs.release_name }}
+        generate_release_notes: true
+        body: |
+          - **Data e Hora        :** ${{ env.START_TIME }}
+          - **Arquivo PKG        :** ${{ env.PKG_BASENAME }}
+          - **Arquivo SIG        :** ${{ env.PKG_BASENAME }}.sig
+          - **Arquivo MD5        :** ${{ env.PKG_BASENAME }}.md5
+          - **Arquivo SIG.MD5    :** ${{ env.PKG_BASENAME }}.sig.md5
+          - **Nome do Repositório:** ${{ env.REPO_NAME }}
+        draft: false
+        prerelease: false
+        fail_on_unmatched_files: false
 
     - name: Telegram Alert Fail
       if: failure()
