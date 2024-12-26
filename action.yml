@@ -909,7 +909,7 @@ runs:
           ${{ env.PKG_PATH }}.md5
           ${{ env.PKG_PATH }}.sig.md5
           ${{ steps.prepare-package.outputs.upload_path }}
-        tag_name: ${{ env.ISO_TAG_NAME }}
+        tag_name: ${{ env.PKG_TAG_NAME }}
         name: ${{ steps.prepare-package.outputs.release_name }}
         generate_release_notes: true
         body: |
