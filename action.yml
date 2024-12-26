@@ -383,7 +383,7 @@ runs:
         replicate '-'
 
         msg_info "#Remove existing BigLinux repositories"
-        msg_run "sudo sed -i '/biglinux/,$d' /etc/pacman.conf"
+        msg_run 'sudo sed -i '/biglinux/,$d' /etc/pacman.conf'
 
         msg_info "#Add appropriate repositories based on build environment"
         if [ "${{ inputs.build_env }}" == "testing" ] || [ "$BRANCH_TYPE" == "testing" ]; then
