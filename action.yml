@@ -490,8 +490,14 @@ runs:
         msg_raw "Package name     : ${{ inputs.package_name }}"
 
         msg_info '# Se entramos em um diretório no passo anterior, vamos garantir que estamos nele'
-        if [[ -d "source_repo" ]]; then
-          msg_run 'cd source_repo'
+        if [[ "${{ inputs.build_env }}" == "aur" ]]; then
+          if [[ -d "aur_package" ]]; then
+            msg_run 'cd aur_package'
+          fi
+        else
+          if [[ -d "source_repo" ]]; then
+            msg_run 'cd source_repo'
+          fi
         fi
 
         msg_info '# Debug: Show current directory and contents'
