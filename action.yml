@@ -328,6 +328,8 @@ runs:
       shell: bash
       run: |
         #Config ambiente de build - Atualiza e instala dependências necessárias
+        source /tmp/send_telegram_message.sh
+        replicate '='
         #sudo pacman -Syu --quiet --needed --noconfirm \
         #   base-devel \
         #   cmake \
@@ -341,6 +343,7 @@ runs:
         #   curl \
         #   tree
         msg_run 'sudo pacman -Syu --quiet --needed --noconfirm'
+        replicate '='
 
     - name: Setup TMATE Session
       uses: mxschmitt/action-tmate@v3
