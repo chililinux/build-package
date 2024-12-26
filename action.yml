@@ -836,6 +836,7 @@ runs:
       run: |
         #Prepare Package for release (7z)
         source /tmp/send_telegram_message.sh
+        pushd /home/packages || true
         # Prepara a mensagem
         MESSAGE="⏳ <b>[step 2/3] build-package - Prepare Package for release (7z)</b>
         <b>Job:</b> <code>#${GITHUB_RUN_NUMBER}</code>
@@ -883,6 +884,7 @@ runs:
         msg_info "full_pkgname (sig.md5) : ${{env.full_pkgname}}.sig.md5"
         msg_info "release                : ${release}"
         msg_info "release_name           : ${release_name}"
+        popd || true
         replicate '='
 
     - name: Verificar se o package foi gerado corretamente
