@@ -583,7 +583,7 @@ runs:
 
           make_with_chrootbuild() {
             msg_info '# Ensure architecture is set to x86_64'
-            msg_run "sed -i "/^arch=/c\arch=('x86_64')" PKGBUILD"
+            sed -i "/^arch=/c\arch=('x86_64')" PKGBUILD
             msg_info "Build for x86_64"
 
             msg_info '# Determinar o branch de build'
@@ -679,7 +679,7 @@ runs:
           branch="EXTRA"  # Todos os pacotes AUR vão para EXTRA
         else
           msg_run 'cd /home/packages'
-          # Set the branch based on BRANCH_TYPE
+          msg_info '# Set the branch based on BRANCH_TYPE'
           case "${{ inputs.branch_type }}" in
             "stable")
               branch="STABLE"
@@ -746,7 +746,7 @@ runs:
         #Keeps only the most recent package
         source /tmp/send_telegram_message.sh
         replicate '#'
-        # Determine the branch and database name based on the branch type
+        msg_info '# Determine the branch and database name based on the branch type'
         case "${{ inputs.branch_type }}" in
           "stable")
             branch="STABLE"
