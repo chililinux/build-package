@@ -446,7 +446,7 @@ runs:
         replicate '#'
         msg_run 'cat /etc/pacman.conf'
         replicate '#'
-        msg_run 'cat /etc/makepkg.conf
+        msg_run 'cat /etc/makepkg.conf'
         replicate '#'
 
     - name: Download Source code
