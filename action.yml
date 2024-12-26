@@ -523,8 +523,11 @@ runs:
 
           if [[ -n "$depends" ]] || [[ -n "$makedepends" ]]; then
             msg_info "Installing all dependencies..."
-            yay -S --asdeps --needed --noanswerdiff --noconfirm "${depends[@]}" "${makedepends[@]}"
+            if ! yay -Sy --asdeps --needed --noanswerdiff --noconfirm "${depends[@]}" "${makedepends[@]}"; then
+              return 1
+            fi
           fi
+          return 0
         }
 
         make_with_makepkg() {
@@ -578,7 +581,11 @@ runs:
         msg_run "ls -la $PWD"
         replicate '#'
 
-        install_dependencies
+        if ! install_dependencies; then
+          msg_info "depends    : ${depends[@]}"
+          msg_info "makedepends: ${makedepends[@]}"
+          die "Fail for install dependencies with yay"
+        fi
         #make_with_chrootbuild
         #make_with_yay
         make_with_makepkg
