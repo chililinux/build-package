@@ -521,17 +521,9 @@ runs:
 
           if [[ -n "$depends" ]] || [[ -n "$makedepends" ]]; then
             msg_info "Installing all dependencies..."
-            if ! yay -Sy --asdeps --needed --noanswerdiff --noconfirm "${depends[@]}" "${makedepends[@]}"; then
-              return 1
-            fi
+            yay -Sy --asdeps --needed --noanswerdiff --noconfirm "${depends[@]}" "${makedepends[@]}"
           fi
-          return 0
         }
-
-        # Call the installation function
-        if ! install_dependencies; then
-          die "Failed to install dependencies"
-        fi
 
         make_with_makepkg() {
           if makepkg -s --noconfirm --noprogressbar --nodeps --skipchecksums; then
