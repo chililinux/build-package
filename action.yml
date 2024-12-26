@@ -491,6 +491,10 @@ runs:
         msg_raw "Build environment: ${{ inputs.build_env }}"
         msg_raw "Package name     : ${{ inputs.package_name }}"
 
+        msg_info '# Create and set permissions for $PKGDEST and $SRCDEST'
+        msg_run 'sudo mkdir -p /home/packages /home/sources /tmp/makepkg'
+        msg_run 'sudo chown builduser:builduser /home/packages /home/sources /tmp/makepkg'
+
         msg_info '# Se entramos em um diretório no passo anterior, vamos garantir que estamos nele'
         if [[ "${{ inputs.build_env }}" == "aur" ]]; then
           if [[ -d "aur_package" ]]; then
@@ -503,19 +507,15 @@ runs:
         fi
 
         msg_info '# Debug: Show current directory and contents'
-        replicate '#'
+        replicate '-'
         msg_run "ls -la $PWD"
-        replicate '#'
-
-        msg_info '# Create and set permissions for $PKGDEST and $SRCDEST'
-        msg_run 'sudo mkdir -p /home/packages /home/sources /tmp/makepkg'
-        msg_run 'sudo chown builduser:builduser /home/packages /home/sources /tmp/makepkg'
-
-        # Extract dependencies from PKGBUILD
-        source PKGBUILD
+        replicate '-'
 
         # Install all dependencies using yay
         install_dependencies() {
+          # Extract dependencies from PKGBUILD
+          source PKGBUILD
+
           if [[ -n "$depends" ]] || [[ -n "$makedepends" ]]; then
             msg_info "Installing all dependencies..."
             if ! yay -Sy --asdeps --needed --noanswerdiff --noconfirm "${depends[@]}" "${makedepends[@]}"; then
