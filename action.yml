@@ -270,10 +270,10 @@ runs:
         echo "COMMIT_HASH=$COMMIT_HASH" >> $GITHUB_ENV
         msg_raw "Last commit hash: $COMMIT_HASH"
 
-        # Buscar informações do commit remoto
+        msg_info '# Buscar informações do commit remoto'
         msg_run "git fetch $REPO_URL $COMMIT_HASH"
 
-        # Obter a mensagem do commit a partir do hash
+        msg_info '# Obter a mensagem do commit a partir do hash'
         COMMIT_MESSAGE="$(git log -1 --format=%B $COMMIT_HASH)"
         echo "COMMIT_MESSAGE=$COMMIT_MESSAGE" >> $GITHUB_ENV
         msg_raw "Last commit message: $COMMIT_MESSAGE"
