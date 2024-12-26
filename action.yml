@@ -533,18 +533,33 @@ runs:
           #msg_info "Installing dependencies..."
           #sudo yay -Sy --asdeps --nodeps $depends $makedepends --noconfirm
 
-          msg_info '# Construir o pacote sem instalar'
-          msg_info "Building AUR package: ${{ inputs.package_name }}"
-          if makepkg -s --noconfirm --noprogressbar; then
-            pkgname="${{ inputs.package_name }}"
-            full_pkgname="$(find . -type f -iname "$pkgname*.pkg.tar.zst" -print)"
-            echo "full_pkgname=$full_pkgname" >> $GITHUB_ENV
-            msg_run "cp -f $full_pkgname /home/packages/ 2>/dev/null" || msg_warning 'No package found to copy'
-            msg_raw 'Build completed.'
-            msg_run 'ls -la /home/packages'
-          else
-            die 'Build makepkg fail.'
-          fi
+          make_with_makepkg() {
+            msg_info "Building AUR package: ${{ inputs.package_name }}"
+            if makepkg -s --noconfirm --noprogressbar; then
+              pkgname="${{ inputs.package_name }}"
+              full_pkgname="$(find . -type f -iname "$pkgname*.pkg.tar.zst" -print)"
+              echo "full_pkgname=$full_pkgname" >> $GITHUB_ENV
+              msg_run "cp -f $full_pkgname /home/packages/ 2>/dev/null" || msg_warning 'No package found to copy'
+              msg_raw 'Build completed.'
+              msg_run 'ls -la /home/packages'
+            else
+              die 'Build with makepkg fail.'
+            fi
+          }
+
+          make_with_yay() {
+            if yay -Sy --asdeps --needed --noanswerdiff --noconfirm; then
+              pkgname="${{ inputs.package_name }}"
+              full_pkgname="$(find . -type f -iname "$pkgname*.pkg.tar.zst" -print)"
+              msg_raw "full_pkgname : $full_pkgname"
+              echo "full_pkgname=$full_pkgname" >> $GITHUB_ENV
+              msg_run "mv $full_pkgname /home/packages/ 2>/dev/null" || msg_warning 'No package found to move'
+              msg_ok "Build completed. Checking /home/packages:"
+              msg_run 'ls -la /home/packages'
+            else
+              die "Build with yay fail."
+            fi
+           }
         else
           msg_info '# Para pacotes não-AUR'
           gitfolder=$(find . -name "PKGBUILD" -exec dirname {} \;)
@@ -560,7 +575,7 @@ runs:
               msg_ok "Build completed. Checking /home/packages:"
               msg_run 'ls -la /home/packages'
             else
-              die "Build makepkg fail."
+              die "Build with makepkg fail."
             fi
            }
 
@@ -574,7 +589,7 @@ runs:
               msg_ok "Build completed. Checking /home/packages:"
               msg_run 'ls -la /home/packages'
             else
-              die "Build makepkg fail."
+              die "Build with makepkg fail."
             fi
            }
 
