@@ -466,7 +466,6 @@ runs:
           else
             die "Error: Failed to clone AUR package"
           fi
-
         elif [[ -n "${{ inputs.url }}" ]]; then
           msg_raw "Cloning repository from: ${{ inputs.url }}"
           msg_run "git clone ${{ inputs.url }}.git source_repo"
@@ -478,6 +477,9 @@ runs:
         else
           msg_warning "No URL provided, assuming already in the correct repository"
         fi
+        source PKGBUILD
+        TAG_NAME="$pkgver-$pkgrel"
+        echo "TAG_NAME=$TAG_NAME"  >> $GITHUB_ENV
         replicate '#'
 
     - name: Build package
@@ -806,8 +808,8 @@ runs:
       id: set-tag-name
       shell: bash
       run: |
-        FILENAME="${{env.PKGNAME_BASENAME}}"
-        TAG_NAME=$(echo "$FILENAME" | grep -oP '\d{2}\.\d{2}\.\d{2}|\d{8}' | sed -E 's/(\d{2})\.(\d{2})\.(\d{2})/20\1\2\3/')-$(date +%H%M)
+        #FILENAME="${{env.PKGNAME_BASENAME}}"
+        #TAG_NAME=$(echo "$FILENAME" | grep -oP '\d{2}\.\d{2}\.\d{2}|\d{8}' | sed -E 's/(\d{2})\.(\d{2})\.(\d{2})/20\1\2\3/')-$(date +%H%M)
         echo "PKG_TAG_NAME=$TAG_NAME"         >> $GITHUB_ENV
         echo "pkg_path=/home/packages/${{env.PKGNAME_BASENAME}}" >> $GITHUB_OUTPUT
         echo "PKG_PATH=/home/packages/${{env.PKGNAME_BASENAME}}" >> $GITHUB_ENV
