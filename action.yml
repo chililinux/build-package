@@ -378,13 +378,15 @@ runs:
         echo 'Server = https://manjaro.c3sl.ufpr.br/testing/$repo/$arch' | sudo tee -a /etc/pacman.d/mirrorlist
 
         replicate '-'
-        msg_run "cat /etc/pacman.d/mirrorlist"
+        msg_run 'cat /etc/pacman.d/mirrorlist'
+        replicate '-'
+        msg_run 'cat /etc/pacman.conf'
         replicate '-'
 
         msg_info "#Remove existing BigLinux repositories"
         sudo sed -i '/biglinux/,$d' /etc/pacman.conf
 
-        msg_info "#Add on build environment"
+        msg_info "#Add repositories on build environment"
         echo '
         [chili-stable]
         SigLevel = PackageRequired
@@ -427,14 +429,6 @@ runs:
 
           msg_info '#Habilitar o repositório multilib (necessário para alguns pacotes AUR)'
           sudo sed -i '/\[multilib\]/,/Include/s/^#//' /etc/pacman.conf
-
-          msg_info '#Atualizar os repositórios após as mudanças'
-          msg_run "sudo pacman -Sy"
-
-          msg_info '#Instalar dependências comumente necessárias para builds AUR'
-          msg_run "sudo pacman -S --needed base-devel git --noconfirm"
-        else
-          die "Invalid branch type specified: ${{ inputs.branch_type }}"
         fi
 
         # Configure makepkg
@@ -445,6 +439,14 @@ runs:
         # Modify manjaro-chrootbuild
         sudo sed -i 's|https://repo.manjaro.org/repo|https://nnenix.mm.fcix.net/manjaro|' /usr/lib/manjaro-chrootbuild/util.sh
         sudo sed -i '/-Syy/s/-Syy/-Syy git /' /usr/lib/manjaro-chrootbuild/util-chroot.sh
+
+        msg_info '#Instalar dependências comumente necessárias para builds'
+        msg_run "sudo pacman -Sy --needed base-devel git --noconfirm"
+
+        replicate '#'
+        msg_run 'cat /etc/pacman.conf'
+        replicate '#'
+        msg_run 'cat /etc/makepkg.conf
         replicate '#'
 
     - name: Download Source code
