@@ -377,7 +377,6 @@ runs:
         echo 'Server = https://linorg.usp.br/manjaro/testing/$repo/$arch' | sudo tee -a /etc/pacman.d/mirrorlist
         echo 'Server = https://manjaro.c3sl.ufpr.br/testing/$repo/$arch' | sudo tee -a /etc/pacman.d/mirrorlist
 
-        msg_info '#Exibe /etc/pacman.d/mirrorlist'
         replicate '-'
         msg_run "cat /etc/pacman.d/mirrorlist"
         replicate '-'
@@ -385,67 +384,41 @@ runs:
         msg_info "#Remove existing BigLinux repositories"
         sudo sed -i '/biglinux/,$d' /etc/pacman.conf
 
-        msg_info "#Add appropriate repositories based on build environment"
-        if [ "${{ inputs.build_env }}" == "testing" ] || [ "$BRANCH_TYPE" == "testing" ]; then
-          echo '
-          [chili-testing]
-          SigLevel = PackageRequired
-          Server = https://repo.chililinux.com/testing/$arch
+        msg_info "#Add on build environment"
+        echo '
+        [chili-stable]
+        SigLevel = PackageRequired
+        Server = https://repo.chililinux.com/stable/$arch
 
-          [chili-stable]
-          SigLevel = PackageRequired
-          Server = https://repo.chililinux.com/stable/$arch
+        [chili-testing]
+        SigLevel = PackageRequired
+        Server = https://repo.chililinux.com/testing/$arch
 
-          [community-testing]
-          SigLevel = PackageRequired
-          Server = https://repo.communitybig.org/testing/$arch
+        [chili-extra]
+        SigLevel = PackageRequired
+        Server = https://repo.chililinux.com/extra/$arch
 
-          [community-stable]
-          SigLevel = PackageRequired
-          Server = https://repo.communitybig.org/stable/$arch
+        [community-stable]
+        SigLevel = PackageRequired
+        Server = https://repo.communitybig.org/stable/$arch
 
-          [community-extra]
-          SigLevel = PackageRequired
-          Server = https://repo.communitybig.org/extra/$arch
+        [community-testing]
+        SigLevel = PackageRequired
+        Server = https://repo.communitybig.org/testing/$arch
 
-          [biglinux-testing]
-          SigLevel = PackageRequired
-          Server = https://repo.biglinux.com.br/testing/$arch
+        [community-extra]
+        SigLevel = PackageRequired
+        Server = https://repo.communitybig.org/extra/$arch
 
-          [biglinux-stable]
-          SigLevel = PackageRequired
-          Server = https://repo.biglinux.com.br/stable/$arch' | sudo tee -a /etc/pacman.conf /etc/chrootbuild/pacman.conf.x86_64
-        elif [ "${{ inputs.build_env }}" == "extra" ] || [ "$BRANCH_TYPE" == "extra" ]; then
-          echo '
-          [chili-extra]
-          SigLevel = PackageRequired
-          Server = https://repo.chililinux.com/extra/$arch
+        [biglinux-stable]
+        SigLevel = PackageRequired
+        Server = https://repo.biglinux.com.br/stable/$arch' | sudo tee -a /etc/pacman.conf /etc/chrootbuild/pacman.conf.x86_64
 
-          [community-extra]
-          SigLevel = PackageRequired
-          Server = https://repo.communitybig.org/extra/$arch' | sudo tee -a /etc/pacman.conf /etc/chrootbuild/pacman.conf.x86_64
-        elif [ "${{ inputs.build_env }}" == "stable" ] || [ "$BRANCH_TYPE" == "stable" ]; then
-          echo '
-          [chili-stable]
-          SigLevel = PackageRequired
-          Server = https://repo.chililinux.com/stable/$arch
+        [biglinux-testing]
+        SigLevel = PackageRequired
+        Server = https://repo.biglinux.com.br/testing/$arch
 
-          [chili-extra]
-          SigLevel = PackageRequired
-          Server = https://repo.chililinux.com/extra/$arch
-
-          [community-stable]
-          SigLevel = PackageRequired
-          Server = https://repo.communitybig.org/stable/$arch
-
-          [community-extra]
-          SigLevel = PackageRequired
-          Server = https://repo.communitybig.org/extra/$arch
-
-          [biglinux-stable]
-          SigLevel = PackageRequired
-          Server = https://repo.biglinux.com.br/stable/$arch' | sudo tee -a /etc/pacman.conf /etc/chrootbuild/pacman.conf.x86_64
-        elif [ "${{ inputs.build_env }}" == "aur" ] || [ "${{ inputs.branch_type }}" == "aur" ]; then
+        if [ "${{ inputs.build_env }}" == "aur" ] || [ "${{ inputs.branch_type }}" == "aur" ]; then
           msg_raw "Configurando para pacote AUR: ${{ inputs.package_name }}"
           msg_info '#Configurações específicas para AUR'
           sudo sed -i 's/^#MAKEFLAGS="-j2"/MAKEFLAGS="-j$(nproc)"/' /etc/makepkg.conf
