@@ -1,4 +1,4 @@
-#  Altered: 2024/10/27 - 12:26
+#  Altered: 2024/12/26 - 12:26
 #
 #  Copyright (c) 2024-2024, Vilmar Catafesta <vcatafesta@gmail.com>
 #  All rights reserved.
@@ -170,7 +170,7 @@ runs:
         die() {
           local msg="$1"
           msg="$(sed 's/<[^>]*>//g' <<< "$msg")" # Remove as tags HTML
-          echo -e "BIV=>${cyan}error: ${red}${msg}${reset}"
+          echo -e "BP=>${cyan}error: ${red}${msg}${reset}"
           exit  1
         }
         export -f die
@@ -198,21 +198,20 @@ runs:
         msg() {
           local msg="$1"
           msg="$(sed 's/<[^>]*>//g' <<< "$msg")" # Remove as tags HTML
-          echo -e "BIV=>${cyan}running: ${yellow}${msg}${reset}"
+          echo -e "BP=>${cyan}running: ${yellow}${msg}${reset}"
         }
         export -f msg
 
         msg_ok() {
           local msg="$1"
           msg="$(sed 's/<[^>]*>//g' <<< "$msg")" # Remove as tags HTML
-          echo -e "BIV=>${cyan}feito: ${green}${msg}${reset}"
+          echo -e "BP=>${cyan}feito: ${green}${msg}${reset}"
         }
         export -f msg_ok
 
         msg_run() {
           local msg="$1"
-          msg="$(sed 's/<[^>]*>//g' <<< "$msg")" # Remove as tags HTML
-          echo -e "BIV=>${cyan}running: ${yellow}${msg}${reset}"
+          echo -e "BP=>${cyan}running: ${yellow}${msg}${reset}"
           eval "$msg"
         }
         export -f msg_run
@@ -220,14 +219,14 @@ runs:
         msg_info() {
           local msg="$1"
           msg="$(sed 's/<[^>]*>//g' <<< "$msg")" # Remove as tags HTML
-          echo -e "BIV=>${yellow}info   : ${cyan}${msg}${reset}"
+          echo -e "BP=>${yellow}info   : ${cyan}${msg}${reset}"
         }
         export -f msg_info
 
         msg_warning() {
           local msg="$1"
           msg="$(sed 's/<[^>]*>//g' <<< "$msg")" # Remove as tags HTML
-          echo -e "BIV=>${red}warning: ${orange}${msg}${reset}"
+          echo -e "BP=>${red}warning: ${orange}${msg}${reset}"
         }
         export -f msg_warning
 
@@ -266,17 +265,18 @@ runs:
         source /tmp/send_telegram_message.sh
         replicate '='
         REPO_URL="${{ inputs.url }}"
+        echo "REPO_URL=$REPO_URL" >> $GITHUB_ENV
         COMMIT_HASH="$(git ls-remote $REPO_URL HEAD | awk '{print $1}')"
         echo "COMMIT_HASH=$COMMIT_HASH" >> $GITHUB_ENV
-        echo "Last commit hash: $COMMIT_HASH"
+        msg_raw "Last commit hash: $COMMIT_HASH"
 
         # Buscar informações do commit remoto
-        git fetch $REPO_URL $COMMIT_HASH
+        msg_run "git fetch $REPO_URL $COMMIT_HASH"
 
         # Obter a mensagem do commit a partir do hash
         COMMIT_MESSAGE="$(git log -1 --format=%B $COMMIT_HASH)"
         echo "COMMIT_MESSAGE=$COMMIT_MESSAGE" >> $GITHUB_ENV
-        echo "Last commit message: $COMMIT_MESSAGE"
+        msg_raw "Last commit message: $COMMIT_MESSAGE"
         replicate '='
 
     - name: Inicializando a criação de pacote
@@ -315,13 +315,13 @@ runs:
         # Debug Inputs
         source /tmp/send_telegram_message.sh
         replicate '='
-        msg "DEBUG: All inputs"
-        msg "${{ toJson(inputs) }}"
-        msg "DEBUG: build_env from input: ${{ inputs.build_env }}"
-        msg "DEBUG: build_env from env: $DEBUG_BUILD_ENV"
-        msg "DEBUG: tmate input: ${{ inputs.tmate }}"
-        msg "DEBUG: All env variables"
-        msg "$(env | sort)"
+        msg_info "DEBUG All inputs"
+        msg_raw "DEBUG Json inputs         : ${{ toJson(inputs) }}"
+        msg_raw "DEBUG build_env from input: ${{ inputs.build_env }}"
+        msg_raw "DEBUG build_env from env  : $DEBUG_BUILD_ENV"
+        msg_raw "DEBUG tmate input         : ${{ inputs.tmate }}"
+        msg_info "DEBUG All env variables above"
+        msg_raw "$(env | sort)"
         replicate '='
 
     - name: Config ambiente de build - Atualiza e instala dependências necessárias
@@ -340,7 +340,7 @@ runs:
         #   duf \
         #   curl \
         #   tree
-        sudo pacman -Syu --quiet --needed --noconfirm
+        msg_run 'sudo pacman -Syu --quiet --needed --noconfirm'
 
     - name: Setup TMATE Session
       uses: mxschmitt/action-tmate@v3
@@ -368,31 +368,28 @@ runs:
         #Configure System and Repositories
         source /tmp/send_telegram_message.sh
         replicate '#'
-        #Set up pacman mirror
-        msg "Usando mirror especificado: ${{ inputs.pacman_mirror }}"
+        msg_info "#Set up pacman mirror"
+        msg_raw "Usando mirror especificado: ${{ inputs.pacman_mirror }}"
         echo 'Server = ${{ inputs.pacman_mirror }}' | sudo tee -a /etc/pacman.d/mirrorlist
         echo 'Server = https://linorg.usp.br/manjaro/testing/$repo/$arch' | sudo tee -a /etc/pacman.d/mirrorlist
         echo 'Server = https://manjaro.c3sl.ufpr.br/testing/$repo/$arch' | sudo tee -a /etc/pacman.d/mirrorlist
 
-        #Exibe /etc/pacman.d/mirrorlist
+        msg_info '#Exibe /etc/pacman.d/mirrorlist'
         replicate '-'
-        echo 'cat /etc/pacman.d/mirrorlist'
-        cat /etc/pacman.d/mirrorlist
+        msg_run "cat /etc/pacman.d/mirrorlist"
         replicate '-'
 
-        # Remove existing BigLinux repositories
-        sudo sed -i '/biglinux/,$d' /etc/pacman.conf
+        msg_info "#Remove existing BigLinux repositories"
+        msg_run "sudo sed -i '/biglinux/,$d' /etc/pacman.conf"
 
-        # Add appropriate repositories based on build environment
+        msg_info "#Add appropriate repositories based on build environment"
         if [ "${{ inputs.build_env }}" == "testing" ] || [ "$BRANCH_TYPE" == "testing" ]; then
           echo '
           [chili-testing]
-          #SigLevel = Optional TrustAll
           SigLevel = PackageRequired
           Server = https://repo.chililinux.com/testing/$arch
 
           [chili-stable]
-          #SigLevel = Optional TrustAll
           SigLevel = PackageRequired
           Server = https://repo.chililinux.com/stable/$arch
 
@@ -418,7 +415,6 @@ runs:
         elif [ "${{ inputs.build_env }}" == "extra" ] || [ "$BRANCH_TYPE" == "extra" ]; then
           echo '
           [chili-extra]
-          #SigLevel = Optional TrustAll
           SigLevel = PackageRequired
           Server = https://repo.chililinux.com/extra/$arch
 
@@ -428,12 +424,10 @@ runs:
         elif [ "${{ inputs.build_env }}" == "stable" ] || [ "$BRANCH_TYPE" == "stable" ]; then
           echo '
           [chili-stable]
-          #SigLevel = Optional TrustAll
           SigLevel = PackageRequired
           Server = https://repo.chililinux.com/stable/$arch
 
           [chili-extra]
-          #SigLevel = Optional TrustAll
           SigLevel = PackageRequired
           Server = https://repo.chililinux.com/extra/$arch
 
@@ -449,20 +443,20 @@ runs:
           SigLevel = PackageRequired
           Server = https://repo.biglinux.com.br/stable/$arch' | sudo tee -a /etc/pacman.conf /etc/chrootbuild/pacman.conf.x86_64
         elif [ "${{ inputs.build_env }}" == "aur" ] || [ "${{ inputs.branch_type }}" == "aur" ]; then
-          echo "Configurando para pacote AUR: ${{ inputs.package_name }}"
-          # Configurações específicas para AUR
-          sudo sed -i 's/^#MAKEFLAGS="-j2"/MAKEFLAGS="-j$(nproc)"/' /etc/makepkg.conf
-          sudo sed -i 's/^#BUILDDIR/BUILDDIR/' /etc/makepkg.conf
-          sudo sed -i 's/^#PKGDEST/PKGDEST/' /etc/makepkg.conf
+          msg_raw "Configurando para pacote AUR: ${{ inputs.package_name }}"
+          msg_info '#Configurações específicas para AUR'
+          msg_run "sudo sed -i 's/^#MAKEFLAGS="-j2"/MAKEFLAGS="-j$(nproc)"/' /etc/makepkg.conf"
+          msg_run "sudo sed -i 's/^#BUILDDIR/BUILDDIR/' /etc/makepkg.conf"
+          msg_run "sudo sed -i 's/^#PKGDEST/PKGDEST/' /etc/makepkg.conf"
 
-          # Habilitar o repositório multilib (necessário para alguns pacotes AUR)
-          sudo sed -i '/\[multilib\]/,/Include/s/^#//' /etc/pacman.conf
+          msg_info '#Habilitar o repositório multilib (necessário para alguns pacotes AUR)'
+          msg_run "sudo sed -i '/\[multilib\]/,/Include/s/^#//' /etc/pacman.conf"
 
-          # Atualizar os repositórios após as mudanças
-          sudo pacman -Sy
+          msg_info '#Atualizar os repositórios após as mudanças'
+          msg_run "sudo pacman -Sy"
 
-          # Instalar dependências comumente necessárias para builds AUR
-          sudo pacman -S --needed base-devel git --noconfirm
+          msg_info '#Instalar dependências comumente necessárias para builds AUR'
+          msg_run "sudo pacman -S --needed base-devel git --noconfirm"
         else
           die "Invalid branch type specified: ${{ inputs.branch_type }}"
         fi
@@ -514,35 +508,35 @@ runs:
         # Build package - Construr pacote
         source /tmp/send_telegram_message.sh
         replicate '#'
-        msg_info "Build environment: ${{ inputs.build_env }}"
-        msg_info "Package name     : ${{ inputs.package_name }}"
+        msg_raw "Build environment: ${{ inputs.build_env }}"
+        msg_raw "Package name     : ${{ inputs.package_name }}"
 
-        # Se entramos em um diretório no passo anterior, vamos garantir que estamos nele
+        msg_info '# Se entramos em um diretório no passo anterior, vamos garantir que estamos nele'
         if [[ -d "source_repo" ]]; then
           msg_run 'cd source_repo'
         fi
 
-        # Debug: Show current directory and contents
+        msg_info '# Debug: Show current directory and contents'
         replicate '#'
         msg_run "ls -la $PWD"
         replicate '#'
 
-        # Create and set permissions for $PKGDEST and $SRCDEST
+        msg_info '# Create and set permissions for $PKGDEST and $SRCDEST'
         msg_run 'sudo mkdir -p /home/packages /home/sources'
         msg_run 'sudo chown builduser:builduser /home/packages /home/sources'
 
         if [[ "${{ inputs.build_env }}" == "aur" ]]; then
           msg_run "cd ${{ inputs.aur_package_dir }}"
-          msg_info "Construindo pacote AUR       : ${{ inputs.package_name }}"
-          msg_info "Current AUR package directory: $PWD"
+          msg_raw "Construindo pacote AUR       : ${{ inputs.package_name }}"
+          msg_raw "Current AUR package directory: $PWD"
           replicate '#'
           msg_run "ls -la $PWD"
           replicate '#'
 
-          # Give permissions to builduser for the current directory
+          msg_info '# Give permissions to builduser for the current directory'
           msg_run 'sudo chown -R builduser:builduser . '
 
-          # Create temporary directory for makepkg
+          msg_info '# Create temporary directory for makepkg'
           msg_run 'sudo mkdir -p /tmp/makepkg'
           msg_run 'sudo chown builduser:builduser /tmp/makepkg'
 
@@ -553,7 +547,7 @@ runs:
           #msg_info "Installing dependencies..."
           #sudo yay -Sy --asdeps --nodeps $depends $makedepends --noconfirm
 
-          # Construir o pacote sem instalar
+          msg_info '# Construir o pacote sem instalar'
           msg_info "Building AUR package: ${{ inputs.package_name }}"
           if makepkg -s --noconfirm --noprogressbar; then
             pkgname="${{ inputs.package_name }}"
@@ -566,7 +560,7 @@ runs:
             die 'Build makepkg fail.'
           fi
         else
-          # Para pacotes não-AUR
+          msg_info '# Para pacotes não-AUR'
           gitfolder=$(find . -name "PKGBUILD" -exec dirname {} \;)
           msg_run "cd $gitfolder"
 
@@ -577,7 +571,7 @@ runs:
               msg_raw "full_pkgname : $full_pkgname"
               echo "full_pkgname=$full_pkgname" >> $GITHUB_ENV
               msg_run "mv $full_pkgname /home/packages/ 2>/dev/null" || msg_warning 'No package found to move'
-              msg "Build completed. Checking /home/packages:"
+              msg_ok "Build completed. Checking /home/packages:"
               msg_run 'ls -la /home/packages'
             else
               die "Build makepkg fail."
@@ -585,11 +579,11 @@ runs:
            }
 
           make_with_chrootbuild() {
-            # Ensure architecture is set to x86_64
-            sed -i "/^arch=/c\arch=('x86_64')" PKGBUILD
-            # Build for x86_64
-            echo -e "\033[01;31mBuild x86_64\033[0m"
-            # Determinar o branch de build
+            msg_info '# Ensure architecture is set to x86_64'
+            msg_run "sed -i "/^arch=/c\arch=('x86_64')" PKGBUILD"
+            msg_info "Build for x86_64"
+
+            msg_info '# Determinar o branch de build'
             if [ "${{ inputs.build_env }}" == "extra" ]; then
               build_branch="testing"
               msg_info "Ambiente de build é 'extra', usando branch 'testing' para chrootbuild"
@@ -597,21 +591,21 @@ runs:
               build_branch="${{ inputs.branch_type }}"
             fi
 
-            # Executar chrootbuild com o branch determinado
-            sudo chrootbuild -H -p . -b ${build_branch}
+            msg_info '# Executar chrootbuild com o branch determinado'
+            msg_run "sudo chrootbuild -H -p . -b ${build_branch}"
           }
-          #make_with_chrootbuild
           msg_run 'sudo pacman -Sy --quiet'
+          #make_with_chrootbuild
           make_with_makepkg
         fi
 
-        # Executa comando extra, se fornecido
-        if [ -n "${{ inputs.extra_command }}" ]; then
+        msg_info '# Executa comando extra, se fornecido'
+        if [[ -n "${{ inputs.extra_command }}" ]]; then
           msg_raw "Executando comando extra: ${{ inputs.extra_command }}"
           ${{ inputs.extra_command }}
         fi
 
-        # Debug: Mostrar conteúdo do diretório após o build
+        msg_info '# Debug: Mostrar conteúdo do diretório após o build'
         msg_run "ls -la $PWD"
         msg_run 'ls -la /home/sources'
         msg_run 'ls -la /home/packages'
@@ -966,8 +960,8 @@ runs:
         <b>Workflow:</b> <code>build-package/action.yml</code>
         <b>Pacote:</b> <code>${{ env.PKGNAME_BRANCH }}/${{ env.PKGNAME_BASENAME }}</code>
         <b>Inicio:</b> <code>${START_TIME}</code>
-        <b>Fim   :</b> <code>${END_TIME}</code>
-        <b>Tempo :</b> <code>${hours}h ${minutes}m ${seconds}s</code>"
+        <b>Fim:</b> <code>${END_TIME}</code>
+        <b>Tempo:</b> <code>${hours}h ${minutes}m ${seconds}s</code>"
         send_telegram_message "$message"
         msg_ok "$message"
         replicate '#'
