@@ -211,6 +211,7 @@ runs:
 
         msg_run() {
           local msg="$1"
+          msg="$(sed 's/<[^>]*>//g' <<< "$msg")" # Remove as tags HTML
           echo -e "BIV=>${cyan}running: ${yellow}${msg}${reset}"
           eval "$msg"
         }
@@ -218,12 +219,14 @@ runs:
 
         msg_info() {
           local msg="$1"
+          msg="$(sed 's/<[^>]*>//g' <<< "$msg")" # Remove as tags HTML
           echo -e "BIV=>${yellow}info   : ${cyan}${msg}${reset}"
         }
         export -f msg_info
 
         msg_warning() {
           local msg="$1"
+          msg="$(sed 's/<[^>]*>//g' <<< "$msg")" # Remove as tags HTML
           echo -e "BIV=>${red}warning: ${orange}${msg}${reset}"
         }
         export -f msg_warning
@@ -707,12 +710,13 @@ runs:
           file_size_mb=$((file_size_kb / 1024))
 
           message="✅ <b>[step 2/4] build-package - ENVIANDO 📦 PARA REPOSITÓRIO</b>
-          <b>            Job:</b> <code>#${GITHUB_RUN_NUMBER}</code>
-          <b>       Workflow:</b> <code>build-package/action.yml</code>
-          <b>         Pacote:</b> <code>${branch_escaped,,}/${pkgname_escaped}</code>
+          <b>Job:</b> <code>#${GITHUB_RUN_NUMBER}</code>
+          <b>Workflow:</b> <code>build-package/action.yml</code>
+          <b>Pacote:</b> <code>${branch_escaped,,}/${pkgname_escaped}</code>
           <b>Tamanho b/Kb/Mb:</b> <code>${file_size_bytes}/${file_size_kb}/${file_size_mb}</code>
-          <b>    Repositório:</b> <code>${repo_path}</code>
-          <b>         Branch:</b> <code>${branch_escaped}</code>"
+          <b>Repositório:</b> <code>${repo_path}</code>
+          <b>Branch:</b> <code>${branch_escaped}</code>"
+          msg_ok "$message"
           send_telegram_message "$message"
 
           if rsync -vapz -e "ssh -p ${{ inputs.repo_port }}" $i ${{ inputs.repo_user }}@$ip:${{ inputs.repo_dir }}/${branch,,}/x86_64/; then
@@ -937,6 +941,7 @@ runs:
         <b>Pacote:</b> <code>${{ github.event.action }}</code>
         <b>Branch:</b> <code>${{ github.ref_name }}</code>
         <b>URL erro:</b> <a href='https://github.com/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}'>${link_action}</a>"
+        msg_warning "$message"
         send_telegram_message "$message"
         replicate '#'
 
