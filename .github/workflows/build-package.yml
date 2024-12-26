@@ -81,6 +81,7 @@ env:
   CHAT_ID: "${{ secrets.CHAT_ID }}"
   BRANCH_ORIGEM: "${{ github.ref_name }}"
   REPO_ORIGEM: "${{ github.event.client_payload.url }}"
+  REPO_NAME: "${{ github.repository }}"
   BRANCH_FULLNAME: "${{ github.event.client_payload.branch }}"
 
 jobs:
