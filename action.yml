@@ -564,6 +564,20 @@ runs:
             fi
            }
 
+          make_with_yay() {
+            if yay -Sy --asdeps --needed --noanswerdiff --noconfirm; then
+              pkgname="${{ inputs.package_name }}"
+              full_pkgname="$(find . -type f -iname "$pkgname*.pkg.tar.zst" -print)"
+              msg_raw "full_pkgname : $full_pkgname"
+              echo "full_pkgname=$full_pkgname" >> $GITHUB_ENV
+              msg_run "mv $full_pkgname /home/packages/ 2>/dev/null" || msg_warning 'No package found to move'
+              msg_ok "Build completed. Checking /home/packages:"
+              msg_run 'ls -la /home/packages'
+            else
+              die "Build makepkg fail."
+            fi
+           }
+
           make_with_chrootbuild() {
             msg_info '# Ensure architecture is set to x86_64'
             sed -i "/^arch=/c\arch=('x86_64')" PKGBUILD
@@ -582,7 +596,12 @@ runs:
           }
           msg_run 'sudo pacman -Sy --quiet'
           #make_with_chrootbuild
-          make_with_makepkg
+
+          if [[ "${{ inputs.build_env }}" == "aur" ]]; then
+            make_with_yay
+          else
+            make_with_makepkg
+          fi
         fi
 
         msg_info '# Executa comando extra, se fornecido'
@@ -735,11 +754,11 @@ runs:
             branch="STABLE"
             db_name="chili-stable"
             ;;
-          "extra")
+          "aur" | "extra")
             branch="EXTRA"
             db_name="chili-extra"
             ;;
-          "aur" | "testing")
+          "testing")
             branch="TESTING"
             db_name="chili-testing"
             ;;
