@@ -814,15 +814,15 @@ runs:
         FILENAME="${{env.PKGNAME_BASENAME}}"
         #TAG_NAME=$(echo "$FILENAME" | grep -oP '\d{2}\.\d{2}\.\d{2}|\d{8}' | sed -E 's/(\d{2})\.(\d{2})\.(\d{2})/20\1\2\3/')-$(date +%H%M)
         TAG_NAME="${{env.TAG_NAME}}"
-        echo "PKG_TAG_NAME=$TAG_NAME"         >> $GITHUB_ENV
+        echo "PKG_TAG_NAME=$TAG_NAME"                            >> $GITHUB_ENV
         echo "pkg_path=/home/packages/${{env.PKGNAME_BASENAME}}" >> $GITHUB_OUTPUT
         echo "PKG_PATH=/home/packages/${{env.PKGNAME_BASENAME}}" >> $GITHUB_ENV
 
         msg_raw "FILENAME    : ${{env.PKGNAME_BASENAME}}"
         msg_raw "TAG_NAME    : ${{env.TAG_NAME}}"
         msg_raw "PKG_TAG_NAME: $TAG_NAME"
-        msg_raw "pkg_path    : ${{env.pkg_path}}"
-        msg_raw "PKG_PATH    : ${{env.PKG_PATH}}"
+        msg_raw "pkg_path    : /home/packages/${{env.PKGNAME_BASENAME}}"
+        msg_raw "PKG_PATH    : /home/packages/${{env.PKGNAME_BASENAME}}"
         replicate '#'
 
     - name: Prepare Package for release (7z)
