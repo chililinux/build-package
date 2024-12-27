@@ -821,12 +821,16 @@ runs:
       id: set-tag-name
       shell: bash
       run: |
+        #Extrair data do nome do arquivo .zst e definir tag_name
+        source /tmp/send_telegram_message.sh
+        replicate '#'
         FILENAME="${{env.PKGNAME_BASENAME}}"
         #TAG_NAME=$(echo "$FILENAME" | grep -oP '\d{2}\.\d{2}\.\d{2}|\d{8}' | sed -E 's/(\d{2})\.(\d{2})\.(\d{2})/20\1\2\3/')-$(date +%H%M)
         TAG_NAME="${{env.TAG_NAME}}"
         echo "PKG_TAG_NAME=$TAG_NAME"         >> $GITHUB_ENV
         echo "pkg_path=/home/packages/${{env.PKGNAME_BASENAME}}" >> $GITHUB_OUTPUT
         echo "PKG_PATH=/home/packages/${{env.PKGNAME_BASENAME}}" >> $GITHUB_ENV
+        replicate '#'
 
     - name: Prepare Package for release (7z)
       id: prepare-package
@@ -834,22 +838,17 @@ runs:
       run: |
         #Prepare Package for release (7z)
         source /tmp/send_telegram_message.sh
+        replicate '#'
         pushd /home/packages || true
         # Prepara a mensagem
-        MESSAGE="⏳ <b>[step 3/4] build-package - Prepare Package for release (7z)</b>
+        message="⏳ <b>[step 3/4] build-package - Prepare Package for release (7z)</b>
         <b>Job:</b> <code>#${GITHUB_RUN_NUMBER}</code>
         <b>Workflow:</b> <code>build-package/action.yml</code>
         <b>Pacote:</b> <code>${{ env.PKGNAME_BRANCH }}/${{ env.PKGNAME_BASENAME }}</code>
         <b>Inicio:</b> <code>${START_TIME}</code>"
-
-        # Remove as tags HTML e exibe o resultado no terminal
-        echo -e "${green}$(sed 's/<[^>]*>//g' <<< "$MESSAGE")${reset}"
-        # Envia a mensagem original com HTML para o Telegram
-        curl -s -X POST "https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendMessage" \
-          -d chat_id="${CHAT_ID}" \
-          -d text="${MESSAGE}" \
-          -d parse_mode="HTML"
-        replicate '='
+        send_telegram_message "$message"
+        msg_info "$message"
+        replicate '-'
         msg_run "ls -lah $PWD"
         release=$(basename "${{env.PKG_PATH}}" .pkg.tar.zst)
         release_name="${release}"
@@ -872,9 +871,9 @@ runs:
         echo "upload_path=${upload_path}" >> "$GITHUB_OUTPUT"
 
         msg_info "Package ${release} prepared for release"
-        replicate '='
+        replicate '-'
         msg_run "ls -lah $PWD"
-        replicate '='
+        replicate '-'
         # Debug
         msg_info "full_pkgname (original): ${{env.PKG_PATH}}"
         msg_info "Upload Path            : ${upload_path}"
@@ -895,8 +894,8 @@ runs:
         replicate '='
         pushd /home/packages || true
         msg_run 'ls -lah --color=auto $PWD'
-        replicate '='
         popd || true
+        replicate '='
 
     - name: Create Release
       if: ${{ inputs.teste_input != true }}
