@@ -479,9 +479,6 @@ runs:
         else
           msg_warning "No URL provided, assuming already in the correct repository"
         fi
-        source PKGBUILD
-        TAG_NAME="$pkgver-$pkgrel"
-        echo "TAG_NAME=$TAG_NAME"  >> $GITHUB_ENV
         replicate '#'
 
     - name: Build package
@@ -522,7 +519,9 @@ runs:
           fi
           msg_run "cd $gitfolder"
           source PKGBUILD
-
+          TAG_NAME="$pkgver-$pkgrel"
+          echo "TAG_NAME=$TAG_NAME"  >> $GITHUB_ENV
+          msg_info "TAG_NAME   : ${TAG_NAME}"
           msg_info "depends    : ${depends[@]}"
           msg_info "makedepends: ${makedepends[@]}"
 
