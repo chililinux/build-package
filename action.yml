@@ -396,7 +396,6 @@ runs:
           [community-extra]='https://repo.communitybig.org/extra/$arch'
           [biglinux-stable]='https://repo.biglinux.com.br/stable/$arch'
           [biglinux-testing]='https://repo.biglinux.com.br/testing/$arch'
-          [vilmar-testing]='https://repo.biglinux.com.br/testing/$arch'
         )
 
         for entry in "${!entries[@]}"; do
