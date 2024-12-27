@@ -517,7 +517,7 @@ runs:
           if [[ -z "$gitfolder" ]]; then
             die "ixe... Deu ruim, PKGBUILD não localizado!"
           fi
-          msg_run "cd $gitfolder"
+          msg_run "pushd $gitfolder" || true
           source PKGBUILD
           TAG_NAME="$pkgver-$pkgrel"
           echo "TAG_NAME=$TAG_NAME"  >> $GITHUB_ENV
@@ -528,9 +528,11 @@ runs:
           if [[ -n "$depends" ]] || [[ -n "$makedepends" ]]; then
             msg_info "Installing all dependencies..."
             if ! yay -Sy --asdeps --needed --noanswerdiff --noconfirm "${depends[@]}" "${makedepends[@]}"; then
+              msg_run 'popd' || true
               return 1
             fi
           fi
+          msg_run 'popd' || true
           return 0
         }
 
@@ -590,11 +592,11 @@ runs:
           msg_info "makedepends: ${makedepends[@]}"
           die "Fail for install dependencies with yay"
         fi
-        pushd "$gitfolder" || true
+        msg_run "pushd $gitfolder" || true
         #make_with_chrootbuild
         #make_with_yay
         make_with_makepkg
-        popd || true
+        msg_run 'popd' || true
 
         msg_info '# Executa comando extra, se fornecido'
         if [[ -n "${{ inputs.extra_command }}" ]]; then
