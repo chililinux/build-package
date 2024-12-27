@@ -386,41 +386,27 @@ runs:
         msg_info "#Remove existing BigLinux repositories"
         sudo sed -i '/biglinux/,$d' /etc/pacman.conf
 
-        : << 'EOF'
         msg_info "#Add repositories on build environment"
-        echo '
-        [chili-stable]
-        SigLevel = PackageRequired
-        Server = https://repo.chililinux.com/stable/$arch
+        entries=(
+          "[chili-stable]=https://repo.chililinux.com/stable/\$arch"
+          "[chili-testing]=https://repo.chililinux.com/testing/\$arch"
+          "[chili-extra]=https://repo.chililinux.com/extra/\$arch"
+          "[community-stable]=https://repo.communitybig.org/stable/\$arch"
+          "[community-testing]=https://repo.communitybig.org/testing/\$arch"
+          "[community-extra]=https://repo.communitybig.org/extra/\$arch"
+          "[biglinux-stable]=https://repo.biglinux.com.br/stable/\$arch"
+          "[biglinux-testing]=https://repo.biglinux.com.br/testing/\$arch"
+        )
 
-        [chili-testing]
-        SigLevel = PackageRequired
-        Server = https://repo.chililinux.com/testing/$arch
+        for entry in "${entries[@]}"; do
+          section="${entry%%=*}" # Extrai a seção (antes do "=")
+          server="${entry#*=}"   # Extrai o servidor (depois do "=")
 
-        [chili-extra]
-        SigLevel = PackageRequired
-        Server = https://repo.chililinux.com/extra/$arch
-
-        [community-stable]
-        SigLevel = PackageRequired
-        Server = https://repo.communitybig.org/stable/$arch
-
-        [community-testing]
-        SigLevel = PackageRequired
-        Server = https://repo.communitybig.org/testing/$arch
-
-        [community-extra]
-        SigLevel = PackageRequired
-        Server = https://repo.communitybig.org/extra/$arch
-
-        [biglinux-stable]
-        SigLevel = PackageRequired
-        Server = https://repo.biglinux.com.br/stable/$arch
-
-        [biglinux-testing]
-        SigLevel = PackageRequired
-        Server = https://repo.biglinux.com.br/testing/$arch' | sudo tee -a /etc/pacman.conf /etc/chrootbuild/pacman.conf.x86_64
-        EOF
+          if ! grep -q "$section" /etc/pacman.conf; then
+            echo -e "\n$section\nSigLevel = PackageRequired\nServer = $server\n" | \
+            sudo tee -a /etc/pacman.conf /etc/chrootbuild/pacman.conf.x86_64 >/dev/null
+          fi
+        done
 
         if [ "${{ inputs.build_env }}" == "aur" ] || [ "${{ inputs.branch_type }}" == "aur" ]; then
           msg_raw "Configurando para pacote AUR: ${{ inputs.package_name }}"
