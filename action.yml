@@ -342,7 +342,8 @@ runs:
         #   duf \
         #   curl \
         #   tree
-        msg_run 'sudo pacman -Syu --quiet --needed --noconfirm --overwrite \*'
+        #msg_run 'sudo pacman -Syu --quiet --needed --noconfirm --overwrite \*'
+        msg_run 'sudo pacman -Syu --ignore=chililinux-livecd-key,chili-livecd-key,community-livecd-key --quiet --needed --noconfirm --overwrite \*'
         replicate '='
 
     - name: Setup TMATE Session
