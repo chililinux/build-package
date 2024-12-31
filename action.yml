@@ -342,7 +342,7 @@ runs:
         #   duf \
         #   curl \
         #   tree
-        msg_run 'sudo pacman -Syu --quiet --needed --noconfirm'
+        msg_run 'sudo pacman -Syu --quiet --needed --noconfirm --overwrite \*'
         replicate '='
 
     - name: Setup TMATE Session
