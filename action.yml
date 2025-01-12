@@ -940,7 +940,7 @@ runs:
           - **Arquivo SIG.MD5    :** ${{ env.PKGNAME_BASENAME }}.sig.md5
           - **Nome do Repositório:** ${{ env.REPO_NAME }}
         repository: ${{ env.REPO_OWNER }}/{{ env.REPO_NAME }} # Define o repositório clonado
-        token: ${{ secrets.GITHUB_TOKEN }} # Token com acesso ao outro repositório
+        token: ${{ inputs.github_token }} # Token com acesso ao outro repositório
         draft: false
         prerelease: false
         fail_on_unmatched_files: false
