@@ -347,10 +347,6 @@ runs:
         msg_run 'sudo pacman -Syu --ignore=chililinux-livecd-key,chili-livecd-key,community-livecd-key --quiet --needed --noconfirm --overwrite \*'
         replicate '='
 
-        # Verifica as versões instaladas
-        meson --version
-        ninja --version
-
     - name: Setup TMATE Session
       uses: mxschmitt/action-tmate@v3
       if: ${{ github.event.client_payload.tmate == true || inputs.tmate == true}}
