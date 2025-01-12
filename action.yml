@@ -325,7 +325,7 @@ runs:
         msg_raw "$(env | sort)"
         replicate '='
 
-    - name: Config ambiente de build - Atualiza e instala dependências necessárias
+    - name: Setup build environment
       shell: bash
       run: |
         #Config ambiente de build - Atualiza e instala dependências necessárias
@@ -346,6 +346,10 @@ runs:
         #msg_run 'sudo pacman -Syu --quiet --needed --noconfirm --overwrite \*'
         msg_run 'sudo pacman -Syu --ignore=chililinux-livecd-key,chili-livecd-key,community-livecd-key --quiet --needed --noconfirm --overwrite \*'
         replicate '='
+
+        # Verifica as versões instaladas
+        meson --version
+        ninja --version
 
     - name: Setup TMATE Session
       uses: mxschmitt/action-tmate@v3
@@ -446,11 +450,24 @@ runs:
         # Download the source code
         source /tmp/send_telegram_message.sh
         replicate '#'
+        export REPO_OWNER=""
+        export REPO_NAME=""
         if [[ "${{ inputs.build_env }}" == "aur" ]]; then
           msg_raw "Cloning AUR package from: ${{ inputs.url }}"
           msg_run "git clone ${{ inputs.url }} aur_package"
+
           if [[ -d "aur_package" ]]; then
             msg_run 'cd aur_package'
+
+            # Extrair informações do repositório clonado
+            REPO_URL="${{ inputs.url }}"
+            REPO_NAME=$(basename -s .git "$REPO_URL")
+            REPO_OWNER=$(echo "$REPO_URL" | awk -F[/:] '{print $(NF-1)}')
+
+            # Exportar para o ambiente do GitHub Actions
+            echo "REPO_NAME=$REPO_NAME" >> $GITHUB_ENV
+            echo "REPO_OWNER=$REPO_OWNER" >> $GITHUB_ENV
+
             if [[ ! -f "PKGBUILD" ]]; then
               die "Error: PKGBUILD not found in the AUR package"
             fi
@@ -461,6 +478,16 @@ runs:
           msg_raw "Cloning repository from: ${{ inputs.url }}"
           msg_run "git clone ${{ inputs.url }}.git source_repo"
           msg_run 'cd source_repo'
+
+          # Extrair informações do repositório clonado
+          REPO_URL="${{ inputs.url }}"
+          REPO_NAME=$(basename -s .git "$REPO_URL")
+          REPO_OWNER=$(echo "$REPO_URL" | awk -F[/:] '{print $(NF-1)}')
+
+          # Exportar para o ambiente do GitHub Actions
+          echo "REPO_NAME=$REPO_NAME" >> $GITHUB_ENV
+          echo "REPO_OWNER=$REPO_OWNER" >> $GITHUB_ENV
+
           if [[ -n "${{ inputs.git_branch }}" ]]; then
             msg_raw "Checking out branch: ${{ inputs.git_branch }}"
             msg_run "git checkout ${{ inputs.git_branch }}"
@@ -795,6 +822,7 @@ runs:
           <b>Job:</b> <code>#${GITHUB_RUN_NUMBER}</code>
           <b>Workflow:</b> <code>build-package/action.yml</code>"
           #send_telegram_message "$message"
+          :
         else
           message="🧹 <b>[step 4/6] build-package - INICIANDO LIMPEZA DE PACOTES ANTIGOS</b>
           ❌ <b>[step 5/6] Falha na limpeza de pacotes antigos</b>
@@ -911,6 +939,8 @@ runs:
           - **Arquivo MD5        :** ${{ env.PKGNAME_BASENAME }}.md5
           - **Arquivo SIG.MD5    :** ${{ env.PKGNAME_BASENAME }}.sig.md5
           - **Nome do Repositório:** ${{ env.REPO_NAME }}
+        repository: ${{ env.REPO_OWNER }}/{{ env.REPO_NAME }} # Define o repositório clonado
+        token: ${{ secrets.GITHUB_TOKEN }} # Token com acesso ao outro repositório
         draft: false
         prerelease: false
         fail_on_unmatched_files: false
