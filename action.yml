@@ -456,7 +456,7 @@ runs:
             msg_run 'cd aur_package'
 
             # Extrair informações do repositório clonado
-            REPO_URL="${{ inputs.url }}"
+            REPO_URL="${{ inputs.repo_origem }}"
             REPO_NAME=$(basename -s .git "$REPO_URL")
             REPO_OWNER=$(echo "$REPO_URL" | awk -F[/:] '{print $(NF-1)}')
 
@@ -476,13 +476,13 @@ runs:
           msg_run 'cd source_repo'
 
           # Extrair informações do repositório clonado
-          REPO_URL="${{ inputs.url }}"
-          REPO_NAME=$(basename -s .git "$REPO_URL")
-          REPO_OWNER=$(echo "$REPO_URL" | awk -F[/:] '{print $(NF-1)}')
+          REPO_ORIGEM_URL="${{ inputs.repo_origem }}"
+          REPO_ORIGEM_NAME=$(basename -s .git "$REPO_ORIGEM_URL")
+          REPO_ORIGEM_OWNER=$(echo "$REPO_ORIGEM_URL" | awk -F[/:] '{print $(NF-1)}')
 
           # Exportar para o ambiente do GitHub Actions
-          echo "REPO_NAME=$REPO_NAME" >> $GITHUB_ENV
-          echo "REPO_OWNER=$REPO_OWNER" >> $GITHUB_ENV
+          echo "REPO_ORIGEM_NAME=$REPO_ORIGEM_NAME"   >> $GITHUB_ENV
+          echo "REPO_ORIGEM_OWNER=$REPO_ORIGEM_OWNER" >> $GITHUB_ENV
 
           if [[ -n "${{ inputs.git_branch }}" ]]; then
             msg_raw "Checking out branch: ${{ inputs.git_branch }}"
@@ -935,7 +935,7 @@ runs:
           - **Arquivo MD5        :** ${{ env.PKGNAME_BASENAME }}.md5
           - **Arquivo SIG.MD5    :** ${{ env.PKGNAME_BASENAME }}.sig.md5
           - **Nome do Repositório:** ${{ env.REPO_NAME }}
-        repository: "${{ env.REPO_OWNER }}/{{ env.REPO_NAME }}"
+        repository: "${{ env.REPO_ORIGEM_OWNER }}/{{ env.REPO_ORIGEM_NAME }}"
         token: "${{ inputs.github_token }}"
         draft: false
         prerelease: false
