@@ -951,11 +951,23 @@ runs:
         #Set Repository
         source /tmp/send_telegram_message.sh
         replicate '='
-        if [ "${{ github.repository_owner }}" != "${{ env.REPO_ORIGEM_OWNER }}" ]; then
-          repository="${{ github.repository }}"
-        else
-          repository="${{ env.REPO_ORIGEM_OWNER }}/${{ env.REPO_ORIGEM_NAME }}"
-        fi
+        msg_raw "REPO_ORIGEM_OWNER      : ${{ env.REPO_ORIGEM_OWNER }}"
+        msg_raw "REPO_ORIGEM_NAME       : ${{ env.REPO_ORIGEM_NAME }}"
+        msg_raw "github.repository_owner: ${{ github.repository_owner }}"
+        msg_raw "github.repository      : ${{ github.repository }}"
+
+        case "${{ env.REPO_ORIGEM_OWNER }}" in
+          chililinux|vcatafesta)
+              repository="${{ env.REPO_ORIGEM_OWNER }}/${{ env.REPO_ORIGEM_NAME }}"
+              ;;
+          *)
+            if [ "${{ github.repository_owner }}" != "${{ env.REPO_ORIGEM_OWNER }}" ]; then
+              repository="${{ github.repository }}"
+            else
+              repository="${{ env.REPO_ORIGEM_OWNER }}/${{ env.REPO_ORIGEM_NAME }}"
+            fi
+            ;;
+        esac
         echo "repository=$repository" >> $GITHUB_ENV
         msg_raw "repository : $repository"
         replicate '='
