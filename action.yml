@@ -456,13 +456,13 @@ runs:
             msg_run 'cd aur_package'
 
             # Extrair informações do repositório clonado
-            REPO_URL="${{ inputs.repo_origem }}"
-            REPO_NAME=$(basename -s .git "$REPO_URL")
-            REPO_OWNER=$(echo "$REPO_URL" | awk -F[/:] '{print $(NF-1)}')
+            REPO_ORIGEM_URL="${{ inputs.repo_origem }}"
+            REPO_ORIGEM_NAME=$(basename -s .git "$REPO_ORIGEM_URL")
+            REPO_ORIGEM_OWNER=$(echo "$REPO_ORIGEM_URL" | awk -F[/:] '{print $(NF-1)}')
 
             # Exportar para o ambiente do GitHub Actions
-            echo "REPO_NAME=$REPO_NAME" >> $GITHUB_ENV
-            echo "REPO_OWNER=$REPO_OWNER" >> $GITHUB_ENV
+            echo "REPO_ORIGEM_NAME=$REPO_ORIGEM_NAME"   >> $GITHUB_ENV
+            echo "REPO_ORIGEM_OWNER=$REPO_ORIGEM_OWNER" >> $GITHUB_ENV
 
             if [[ ! -f "PKGBUILD" ]]; then
               die "Error: PKGBUILD not found in the AUR package"
@@ -935,7 +935,7 @@ runs:
           - **Arquivo MD5        :** ${{ env.PKGNAME_BASENAME }}.md5
           - **Arquivo SIG.MD5    :** ${{ env.PKGNAME_BASENAME }}.sig.md5
           - **Nome do Repositório:** ${{ env.REPO_NAME }}
-        repository: "vcatafesta/gitrepo"
+        repository: "${{ env.REPO_ORIGEM_OWNER }}/${{ env.REPO_ORIGEM_NAME }}"
         token: "${{ env.ORGANIZATION_TOKEN }}"
         draft: false
         prerelease: false

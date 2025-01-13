@@ -89,9 +89,10 @@ env:
 jobs:
   SetupAndBuildPackage:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      packages: write
     container:
-      #image: talesam/community-build:1.4
-      #image: talesam/community-build:1.5.1
       image: vcatafesta/build-iso:1.6
       options: --privileged
     steps:
@@ -190,6 +191,12 @@ jobs:
           echo "url: $url"
           echo "git_branch: $git_branch"
           echo "manjaro_branch: $manjaro_branch"
+
+      - name: Setup tmate session
+        uses: mxschmitt/action-tmate@v3
+        if: ${{ github.event_name == 'workflow_dispatch' && inputs.debug_enabled }}
+        with:
+          install-dependencies: false
 
       - name: Build and Publish Package
         uses: ./
