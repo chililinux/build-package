@@ -187,7 +187,7 @@ runs:
             local before_colon="${msg%%:*}:"
             local after_colon="${msg#*: }"
             # Aplica as cores
-            msg="${cyan}${before_colon} ${red}${after_colon}${reset}"
+            msg="${cyan}${before_colon} ${yellow}${after_colon}${reset}"
           else
             # Se não houver ':', aplica apenas a cor padrão
             msg="${cyan}${msg}${reset}"
@@ -249,7 +249,7 @@ runs:
           [[ -z $parse_mode ]] && parse_mode="HTML"
 
           # Remove as tags HTML e exibe o resultado no terminal
-          echo -e "${red}$(sed 's/<[^>]*>//g' <<< "$message")${reset}"
+          echo -e "${green}$(sed 's/<[^>]*>//g' <<< "$message")${reset}"
           # Envia a mensagem original com HTML para o Telegram
           curl -s -X POST "https://api.telegram.org/bot${{ inputs.telegram_token }}/sendMessage" \
             -d chat_id="${{ inputs.telegram_chat_id }}" \
@@ -529,6 +529,27 @@ runs:
           if [[ -z "$gitfolder" ]]; then
             die "ixe... Deu ruim, PKGBUILD não localizado!"
           fi
+
+          # Detect and import GPG keys if present in PKGBUILD
+          if [ -f "PKGBUILD" ]; then
+            msg_info "Checking for required PGP keys..."
+            if grep -q "validpgpkeys" PKGBUILD; then
+              # Extract GPG key from PKGBUILD
+              key=$(grep "validpgpkeys" PKGBUILD | sed 's/.*(\"\(.*\)\")/\1/')
+
+              if [ ! -z "$key" ]; then
+                msg_raw "Importing GPG key: $key"
+                # Try multiple keyservers to ensure key import succeeds
+                gpg --keyserver keyserver.ubuntu.com --recv-keys "$key" || \
+                gpg --keyserver keys.gnupg.net --recv-keys "$key" || \
+                gpg --keyserver hkp://pgp.mit.edu --recv-keys "$key" || \
+                msg_warning "Warning: Failed to import key $key"
+              fi
+            else
+              msg_info "No PGP keys defined in PKGBUILD"
+            fi
+          fi
+
           msg_run "pushd $gitfolder" || true
           source PKGBUILD
           TAG_NAME="$pkgver-$pkgrel"
@@ -661,8 +682,11 @@ runs:
           msg_info "Gerando MD5 para: $p"
           md5sum "$p"     >> "$p.md5"
           msg_info "Gerando MD5 para: $p.sig"
-          md5sum "$p.sig" >> "$p.sig.md5"
-          msg_info "MD5 gerado para: $p.sig"
+          if md5sum "$p.sig" >> "$p.sig.md5"; then
+            msg_ok "MD5 gerado para: $p.sig"
+          else
+            msg_warning "Falha na geração de MD5 para: $p.sig"
+          fi
         done
         msg_run 'ls -lah $PWD *.md5' || msg_warning 'Nenhum arquivo MD5 encontrado'
         replicate '#'
@@ -724,7 +748,7 @@ runs:
           msg_ok "$message"
           send_telegram_message "$message"
 
-          if rsync -vapz -e "ssh -p ${{ inputs.repo_port }}" $i ${{ inputs.repo_user }}@$ip:${{ inputs.repo_dir }}/${branch,,}/x86_64/; then
+          if rsync --itemize-changes -apz -e "ssh -p ${{ inputs.repo_port }}" $i ${{ inputs.repo_user }}@$ip:${{ inputs.repo_dir }}/${branch,,}/x86_64/; then
             message="✅ <b>[step 3/6] build-package - Sucesso no envio do pacote</b>
             <b>Job:</b> <code>#${GITHUB_RUN_NUMBER}</code>
             <b>Workflow:</b> <code>build-package/action.yml</code>
@@ -743,7 +767,7 @@ runs:
         done
 
         for i in *.sig *.md5; do
-          rsync -vapz -e "ssh -p ${{ inputs.repo_port }}" $i ${{ inputs.repo_user }}@$ip:${{ inputs.repo_dir }}/${branch,,}/x86_64/
+          rsync --itemize-changes -apz -e "ssh -p ${{ inputs.repo_port }}" $i ${{ inputs.repo_user }}@$ip:${{ inputs.repo_dir }}/${branch,,}/x86_64/
         done
         replicate '#'
 
@@ -751,7 +775,7 @@ runs:
       if: inputs.update_db == 'true' && success()
       shell: bash
       run: |
-        #Keeps only the most recent package
+        #Clean Old Packages - keeps only the most recent package
         source /tmp/send_telegram_message.sh
         replicate '#'
         msg_info '# Determine the branch and database name based on the branch type'
@@ -782,6 +806,8 @@ runs:
 
         ssh "${{ inputs.repo_user }}@${{ inputs.repo_host }}" -p "${{ inputs.repo_port }}" << 'EOF'
           cd "${{ inputs.repo_dir }}/${{ inputs.branch_type }}/x86_64"
+          echo "Current path: \$PWD"
+          echo "ls -lah \$PWD"
 
           # Manter apenas a versão mais recente de cada pacote
           FETCH_RE='-[^-]+[0-9]+[^.]*.pkg[^.]*.tar.zst'
@@ -793,10 +819,10 @@ runs:
           done
 
           # Remover os bancos de dados existentes
-          #rm -f $db_name.db.tar.gz $db_name.files.tar.gz
+          #rm -f ${db_name}.db.tar.gz ${db_name}.files.tar.gz
 
           # Recriar o banco de dados com os pacotes presentes
-          #repo-add $db_name.db.tar.gz *.pkg.tar.zst
+          #repo-add ${db_name}.db.tar.gz *.pkg.tar.zst
 
           # Remover arquivos .sig, .md5 e .sig.md5 órfãos
           for file in *.sig *.md5 *.sig.md5; do
@@ -808,11 +834,12 @@ runs:
             fi
           done
           exit_code=$?
-          echo -e "${cyan}Limpeza concluída com código de saída: ${exit_code} ${reset}"
           exit $exit_code
         EOF
+        retval="$?"
 
-        if [[ $? -eq 0 ]]; then
+        if [[ $retval -eq 0 ]]; then
+          msg_ok "Limpeza concluída com código de saída: $retval"
           message="🧹 <b>[step 4/6] build-package - INICIANDO LIMPEZA DE PACOTES ANTIGOS</b>
           ✅ <b>[step 5/6] Limpeza de pacotes antigos concluída com êxito</b>
           <b>Job:</b> <code>#${GITHUB_RUN_NUMBER}</code>
@@ -820,6 +847,7 @@ runs:
           #send_telegram_message "$message"
           :
         else
+          msg_warning "Limpeza concluída com código de saída: $retval"
           message="🧹 <b>[step 4/6] build-package - INICIANDO LIMPEZA DE PACOTES ANTIGOS</b>
           ❌ <b>[step 5/6] Falha na limpeza de pacotes antigos</b>
           <b>Job:</b> <code>#${GITHUB_RUN_NUMBER}</code>
@@ -851,6 +879,7 @@ runs:
         replicate '#'
 
     - name: Prepare Package for release (7z)
+      if: inputs.branch_type != 'testing'
       id: prepare-package
       shell: bash
       run: |
@@ -915,8 +944,24 @@ runs:
         popd || true
         replicate '='
 
+    - name: Set Repository
+      id: set_repository
+      shell: bash
+      run: |
+        #Set Repository
+        source /tmp/send_telegram_message.sh
+        replicate '='
+        if [ "${{ github.repository_owner }}" != "${{ env.REPO_ORIGEM_OWNER }}" ]; then
+          repository="${{ github.repository }}"
+        else
+          repository="${{ env.REPO_ORIGEM_OWNER }}/${{ env.REPO_ORIGEM_NAME }}"
+        fi
+        echo "repository=$repository" >> $GITHUB_ENV
+        msg_raw "repository : $repository"
+        replicate '='
+
     - name: Create Release
-      if: ${{ inputs.teste_input != true }}
+      if: inputs.branch_type != 'testing'
       id: create_release
       uses: softprops/action-gh-release@v1
       with:
@@ -934,8 +979,8 @@ runs:
           - **Arquivo SIG        :** ${{ env.PKGNAME_BASENAME }}.sig
           - **Arquivo MD5        :** ${{ env.PKGNAME_BASENAME }}.md5
           - **Arquivo SIG.MD5    :** ${{ env.PKGNAME_BASENAME }}.sig.md5
-          - **Nome do Repositório:** ${{ env.REPO_NAME }}
-        repository: "${{ env.REPO_ORIGEM_OWNER }}/${{ env.REPO_ORIGEM_NAME }}"
+          - **Nome do Repositório:** ${{ env.REPO_ORIGEM_OWNER }}/${{ env.REPO_ORIGEM_NAME }}
+        repository: "${{ env.repository }}"
         token: "${{ env.ORGANIZATION_TOKEN }}"
         draft: false
         prerelease: false
