@@ -936,7 +936,7 @@ runs:
           - **Arquivo SIG.MD5    :** ${{ env.PKGNAME_BASENAME }}.sig.md5
           - **Nome do Repositório:** ${{ env.REPO_NAME }}
         repository: "vcatafesta/gitrepo"
-        token: "${{ inputs.github_token }}"
+        token: "${{ env.ORGANIZATION_TOKEN }}"
         draft: false
         prerelease: false
         fail_on_unmatched_files: false
