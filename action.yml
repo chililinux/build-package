@@ -565,20 +565,9 @@ runs:
 
         make_with_makepkg() {
           msg_info "make_with_makepkg()"
-          source PKGBUILD
           error_log=$(mktemp) # Cria um arquivo temporário para os erros
           if makepkg -s --noconfirm --noprogressbar --nodeps --skipchecksums 2> >(tee "$error_log" >&2); then
-            msg_ok "Build of ${{ inputs.package_name }} completed with makepkg"
-            msg_run "ls -la $PWD"
-            #pkgname="${{ inputs.package_name }}"
-            full_pkgname="$(find . -type f -iname "$pkgname*.pkg.tar.zst" -print)"
-            msg_raw "pkgname      : $pkgname"
-            msg_raw "pkgver       : $pkgver"
-            msg_raw "pkgrel       : $pkgrel"
-            msg_raw "pkgdesc      : $pkgdesc"
-            msg_raw "full_pkgname : $full_pkgname"
-            echo "full_pkgname=$full_pkgname" >> $GITHUB_ENV
-            msg_run "cp -f $full_pkgname /home/packages/ 2>/dev/null" || msg_warning 'No package found to move'
+            make_result "Build of ${{ inputs.package_name }} completed with makepkg"
             return 0
           else
             last_errors=$(tail -n 2 "$error_log") # Mostra as duas últimas linhas de erro
@@ -589,21 +578,13 @@ runs:
 
         make_with_yay() {
           msg_info "make_with_yay()"
-          source PKGBUILD
-          if yay -Sy --asdeps --needed --noanswerdiff --noconfirm; then
-            msg_ok "Build of ${{ inputs.package_name }} completed with yay"
-            msg_run "ls -la $PWD"
-            #pkgname="${{ inputs.package_name }}"
-            full_pkgname="$(find . -type f -iname "$pkgname*.pkg.tar.zst" -print)"
-            msg_raw "pkgname      : $pkgname"
-            msg_raw "pkgver       : $pkgver"
-            msg_raw "pkgrel       : $pkgrel"
-            msg_raw "pkgdesc      : $pkgdesc"
-            msg_raw "full_pkgname : $full_pkgname"
-            echo "full_pkgname=$full_pkgname" >> $GITHUB_ENV
-            msg_run "cp -f $full_pkgname /home/packages/ 2>/dev/null" || msg_warning 'No package found to move'
+          error_log=$(mktemp) # Cria um arquivo temporário para os erros
+          if yay -Sy --asdeps --needed --noanswerdiff --noconfirm 2> >(tee "$error_log" >&2); then
+            make_result "Build of ${{ inputs.package_name }} completed with yay"
             return 0
           else
+            last_errors=$(tail -n 2 "$error_log") # Mostra as duas últimas linhas de erro
+            echo "last_errors=$last_errors" >> $GITHUB_ENV
             die "Build with yay fail."
           fi
         }
@@ -623,6 +604,22 @@ runs:
           msg_info '# Executar chrootbuild com o branch determinado'
           msg_info "sudo chrootbuild -H -p . -b ${build_branch}"
           sudo chrootbuild -H -p . -b ${build_branch}
+        }
+
+        make_resul() {
+          local msg="$"
+          source PKGBUILD
+          msg_ok "Build of ${{ inputs.package_name }} completed with yay"
+          msg_run "ls -la $PWD"
+          #pkgname="${{ inputs.package_name }}"
+          full_pkgname="$(find . -type f -iname "$pkgname*.pkg.tar.zst" -print)"
+          msg_raw "pkgname      : $pkgname"
+          msg_raw "pkgver       : $pkgver"
+          msg_raw "pkgrel       : $pkgrel"
+          msg_raw "pkgdesc      : $pkgdesc"
+          msg_raw "full_pkgname : $full_pkgname"
+          echo "full_pkgname=$full_pkgname" >> $GITHUB_ENV
+          msg_run "cp -f $full_pkgname /home/packages/ 2>/dev/null" || msg_warning 'No package found to move'
         }
 
         replicate '-'
