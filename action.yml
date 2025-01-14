@@ -567,6 +567,7 @@ runs:
           msg_info "make_with_makepkg()"
           if makepkg -s --noconfirm --noprogressbar --nodeps --skipchecksums; then
             msg_ok "Build of ${{ inputs.package_name }} completed with makepkg"
+            msg_run "ls -la $PWD"
             pkgname="${{ inputs.package_name }}"
             full_pkgname="$(find . -type f -iname "$pkgname*.pkg.tar.zst" -print)"
             msg_raw "pkgname      : $pkgname"
