@@ -454,11 +454,12 @@ runs:
 
         msg_raw "PATH_SOURCE_PACKAGE : $PATH_SOURCE_PACKAGE"
         msg_raw "inputs.url          : ${{ inputs.url }}"
-        msg_raw "inputs.build_env    : ${{ inputs.build_env }}"
         msg_raw "inputs.repo_origem  : ${{ inputs.repo_origem }}"
+        msg_raw "inputs.build_env    : ${{ inputs.build_env }}"
+        replicate '-'
 
         if [[ -n "${{ inputs.url }}" ]]; then
-          msg_raw "Cloning package git repository from: ${{ inputs.url }}"
+          msg_raw "Cloning git repository from: ${{ inputs.url }}"
           msg_run "git clone ${{ inputs.url }}.git source_repo"
           msg_run 'cd source_repo'
           msg_raw "current path: $PWD"
@@ -470,8 +471,11 @@ runs:
             fi
           fi
 
-          if [[ ! -f "PKGBUILD" ]]; then
-            die "PKGBUILD não encontrado em : $PWD"
+          pkgbuild_file="$(find . -path './.git' -prune -o -name 'PKGBUILD' -print)"
+          if [[ -f "$pkgbuild_file" ]]; then
+            msg_info "PKGBUILD encontrado em : $PWD/$pkgbuild_file"
+          else
+            die "PKGBUILD não encontrado em : $PWD e subdiretórios"
           fi
 
           # Extrair informações do repositório clonado
