@@ -651,8 +651,8 @@ runs:
 
         msg_run "pushd ${{ env.PKGBUILD_FOLDER }} >/dev/null"
         #make_with_chrootbuild
-        #make_with_yay
-        make_with_makepkg
+        make_with_yay
+        #make_with_makepkg
 
         if [[ -n "${{ inputs.extra_command }}" ]]; then
           msg_info '#Executa comando extra, se fornecido'
