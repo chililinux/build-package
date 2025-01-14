@@ -464,7 +464,7 @@ runs:
         if [[ -n "${{ inputs.url }}" ]]; then
           msg_raw "Cloning git repository from: ${{ inputs.url }}"
           msg_run "git clone ${{ inputs.url }}.git $SOURCE_PACKAGE_PATH"
-          msg_run 'cd $SOURCE_PACKAGE_PATH'
+          msg_run "cd $SOURCE_PACKAGE_PATH"
           msg_raw "current path: $PWD"
 
           if [[ "${{ inputs.build_env }}" != "aur" ]]; then
@@ -489,12 +489,24 @@ runs:
         PKGBUILD_FILE="$(find $SOURCE_PACKAGE_PATH -path './.git' -prune -o -name 'PKGBUILD' -print)"
         PKGBUILD_FOLDER="$(find $SOURCE_PACKAGE_PATH -type f -name PKGBUILD | sed 's/PKGBUILD//')"
         if [[ -f "$PKGBUILD_FILE" ]]; then
-          msg_info "PKGBUILD encontrado em : $SOURCE_PACKAGE_PATH/$PKGBUILD_FILE"
+          msg_ok "PKGBUILD encontrado : $PKGBUILD_FILE"
         else
           die "PKGBUILD não encontrado em : $SOURCE_PACKAGE_PATH e subdiretórios"
         fi
         echo "PKGBUILD_FILE=$PKGBUILD_FILE"     >> $GITHUB_ENV
         echo "PKGBUILD_FOLDER=$PKGBUILD_FOLDER" >> $GITHUB_ENV
+
+        replicate '-'
+        msg_raw "inputs.url         : ${{ inputs.url }}"
+        msg_raw "inputs.repo_origem : ${{ inputs.repo_origem }}"
+        msg_raw "inputs.build_env   : ${{ inputs.build_env }}"
+        msg_raw "ROOT_BUILD_PATH    : $ROOT_BUILD_PATH"
+        msg_raw "SOURCE_PACKAGE_PATH: $SOURCE_PACKAGE_PATH"
+        msg_raw "PKGBUILD_FILE      : $PKGBUILD_FILE"
+        msg_raw "PKGBUILD_FOLDER    : $PKGBUILD_FOLDER"
+        msg_raw "REPO_ORIGEM_URL    : $REPO_ORIGEM_NAME"
+        msg_raw "REPO_ORIGEM_NAME   : $REPO_ORIGEM_NAME"
+        msg_raw "REPO_ORIGEM_OWNER  : $REPO_ORIGEM_OWNER"
         replicate '#'
 
     - name: Build package
