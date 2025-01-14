@@ -211,7 +211,7 @@ runs:
         export -f msg_ok
 
         msg_run() {
-          local msg="$1"
+          local msg="$@"
           echo -e "BP=>${cyan}running: ${yellow}${msg}${reset}"
 
           # Executa o comando e captura o código de saída
