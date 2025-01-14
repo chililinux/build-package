@@ -469,7 +469,7 @@ runs:
 
         if [[ -n "${{ inputs.url }}" ]]; then
           msg_raw "Cloning git repository from: ${{ inputs.url }}"
-          msg_run "git clone --depth=1 ${{ inputs.url }}.git $SOURCE_PACKAGE_PATH"
+          msg_run "git clone ${{ inputs.url }}.git $SOURCE_PACKAGE_PATH"
           msg_run "cd $SOURCE_PACKAGE_PATH"
           msg_raw "current path: $PWD"
 
