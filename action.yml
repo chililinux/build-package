@@ -213,7 +213,13 @@ runs:
         msg_run() {
           local msg="$1"
           echo -e "BP=>${cyan}running: ${yellow}${msg}${reset}"
-          eval "$msg"
+
+          # Executa o comando e captura o código de saída
+          if ! eval "$msg"; then
+            echo -e "BP=>${red}Erro ao executar: ${yellow}${msg}${reset}" >&2
+            return 1
+          fi
+          return 0
         }
         export -f msg_run
 
@@ -463,7 +469,7 @@ runs:
 
         if [[ -n "${{ inputs.url }}" ]]; then
           msg_raw "Cloning git repository from: ${{ inputs.url }}"
-          msg_run "git clone ${{ inputs.url }}.git $SOURCE_PACKAGE_PATH"
+          msg_run "git clone --depth=1 ${{ inputs.url }}.git $SOURCE_PACKAGE_PATH"
           msg_run "cd $SOURCE_PACKAGE_PATH"
           msg_raw "current path: $PWD"
 
@@ -502,8 +508,8 @@ runs:
         msg_raw "inputs.build_env   : ${{ inputs.build_env }}"
         msg_raw "ROOT_BUILD_PATH    : $ROOT_BUILD_PATH"
         msg_raw "SOURCE_PACKAGE_PATH: $SOURCE_PACKAGE_PATH"
-        msg_raw "PKGBUILD_FILE      : $PKGBUILD_FILE"
         msg_raw "PKGBUILD_FOLDER    : $PKGBUILD_FOLDER"
+        msg_raw "PKGBUILD_FILE      : $PKGBUILD_FILE"
         msg_raw "REPO_ORIGEM_URL    : $REPO_ORIGEM_NAME"
         msg_raw "REPO_ORIGEM_NAME   : $REPO_ORIGEM_NAME"
         msg_raw "REPO_ORIGEM_OWNER  : $REPO_ORIGEM_OWNER"
@@ -516,6 +522,7 @@ runs:
         source /tmp/send_telegram_message.sh
 
         install_dependencies() { # Extract dependencies from PKGBUILD
+          msg_info "install_dependencies()"
           msg_run "pushd ${{ env.PKGBUILD_FOLDER }}" || true
 
           # Detect and import GPG keys if present in PKGBUILD
@@ -547,16 +554,17 @@ runs:
             if [[ -n "$depends" ]] || [[ -n "$makedepends" ]]; then
               msg_info "Installing all dependencies..."
               if ! yay -Sy --asdeps --needed --noanswerdiff --noconfirm "${depends[@]}" "${makedepends[@]}"; then
-                msg_run 'popd' || true
+                msg_run 'popd >/dev/null' || true
                 return 1
               fi
             fi
           fi
-          msg_run 'popd' || true
+          msg_run 'popd >/dev/null' || true
           return 0
         }
 
         make_with_makepkg() {
+          msg_info "make_with_makepkg()"
           if makepkg -s --noconfirm --noprogressbar --nodeps --skipchecksums; then
             pkgname="${{ inputs.package_name }}"
             full_pkgname="$(find . -type f -iname "$pkgname*.pkg.tar.zst" -print)"
@@ -564,12 +572,14 @@ runs:
             echo "full_pkgname=$full_pkgname" >> $GITHUB_ENV
             msg_run "cp -f $full_pkgname /home/packages/ 2>/dev/null" || msg_warning 'No package found to move'
             msg_ok "Build completed with makepkg"
+            return 0
           else
             die "Build with makepkg fail."
           fi
         }
 
         make_with_yay() {
+          msg_info "make_with_yay()"
           if yay -Sy --asdeps --needed --noanswerdiff --noconfirm; then
             pkgname="${{ inputs.package_name }}"
             full_pkgname="$(find . -type f -iname "$pkgname*.pkg.tar.zst" -print)"
@@ -577,13 +587,14 @@ runs:
             echo "full_pkgname=$full_pkgname" >> $GITHUB_ENV
             msg_run "cp -f $full_pkgname /home/packages/ 2>/dev/null" || msg_warning 'No package found to move'
             msg_ok "Build completed with yay"
+            return 0
           else
             die "Build with yay fail."
           fi
         }
 
         make_with_chrootbuild() {
-          msg_info '# Ensure architecture is set to x86_64'
+          msg_info "make_with_chrootbuild()"
           sed -i "/^arch=/c\arch=('x86_64')" PKGBUILD
           msg_info "Build arch=x86_64"
 
@@ -595,7 +606,8 @@ runs:
             build_branch="${{ inputs.branch_type }}"
           fi
           msg_info '# Executar chrootbuild com o branch determinado'
-          msg_run "sudo chrootbuild -H -p . -b ${build_branch}"
+          msg_info "sudo chrootbuild -H -p . -b ${build_branch}"
+          sudo chrootbuild -H -p . -b ${build_branch}
         }
 
         replicate '-'
@@ -605,8 +617,8 @@ runs:
         msg_raw "inputs.package_name: ${{ inputs.package_name }}"
         msg_raw "ROOT_BUILD_PATH    : ${{ env.ROOT_BUILD_PATH }}"
         msg_raw "SOURCE_PACKAGE_PATH: ${{ env.SOURCE_PACKAGE_PATH }}"
-        msg_raw "PKGBUILD_FILE      : ${{ env.PKGBUILD_FILE }}"
         msg_raw "PKGBUILD_FOLDER    : ${{ env.PKGBUILD_FOLDER }}"
+        msg_raw "PKGBUILD_FILE      : ${{ env.PKGBUILD_FILE }}"
         msg_raw "REPO_ORIGEM_URL    : ${{ env.REPO_ORIGEM_NAME }}"
         msg_raw "REPO_ORIGEM_NAME   : ${{ env.REPO_ORIGEM_NAME }}"
         msg_raw "REPO_ORIGEM_OWNER  : ${{ env.REPO_ORIGEM_OWNER }}"
@@ -614,6 +626,7 @@ runs:
 
         msg_run 'sudo mkdir -p /home/packages /tmp/makepkg'
         msg_run 'sudo chown builduser:builduser /home/packages /tmp/makepkg'
+        msg_run 'sudo chmod 1777 /home/packages /tmp/makepkg'
         replicate '-'
         msg_run "pushd ${{ env.SOURCE_PACKAGE_PATH }}" || true
         msg_raw "Iniciando a construção do pacote : ${{ inputs.package_name }}"
@@ -627,21 +640,22 @@ runs:
           die "Falha ao instalar dependências com yay"
         fi
 
-        msg_run "pushd ${{ env.PKGBUILD_FOLDER }}" || true
+        msg_run "pushd ${{ env.PKGBUILD_FOLDER }}"
         #make_with_chrootbuild
         #make_with_yay
         make_with_makepkg
-        msg_run 'popd' || true
 
         if [[ -n "${{ inputs.extra_command }}" ]]; then
-          msg_info '# Executa comando extra, se fornecido'
+          msg_info '#Executa comando extra, se fornecido'
           msg_raw "Executando comando extra: ${{ inputs.extra_command }}"
           ${{ inputs.extra_command }}
         fi
 
+        msg_run 'popd >/dev/null' || true
         msg_info '#Conteúdo dos diretórios após o build'
-        msg_run "ls -lah $PWD"
+        replicate '-'
         msg_run "ls -lah ${{ env.PKGBUILD_FOLDER }}"
+        replicate '-'
         msg_run 'ls -lah /home/packages'
         replicate '#'
 
@@ -651,25 +665,38 @@ runs:
         # Sign Package
         source /tmp/send_telegram_message.sh
         replicate '#'
-        msg_run 'cd /home/packages'
+
+        if [ ! -d "/home/packages" ]; then
+          die "Diretório /home/packages não encontrado."
+        fi
+        msg_run 'cd /home/packages' || die "Erro ao acessar /home/packages."
+
+        replicate '-'
         msg_raw "current path: $PWD"
         msg_run "ls -lah $PWD"
+        replicate '-'
 
-        # Assina todos os pacotes encontrados
+        if [[ -z "${{ inputs.gpg_key }}" ]]; then
+          die "Chave GPG ou senha não fornecida."
+        fi
+
         # Import GPG key
         if gpg --batch --import <<< "${{ inputs.gpg_key }}"; then
           msg_ok "Importação da chave GPG foi bem-sucedida."
-          for p in /home/packages/*pkg.tar.zst; do
+          for p in *pkg.tar.zst; do
             [ -e "$p" ] || { msg_info "Nenhum pacote encontrado para assinar."; break; }
-            msg_info "Assinando pacote: $p"
+            # Assina todos os pacotes encontrados
+            msg_raw "Assinando pacote: $p"
             if ! gpg --pinentry-mode loopback --passphrase "${{ inputs.gpg_passphrase }}" --detach-sign "${p}"; then
               msg_warning "Erro ao assinar o pacote: $p"
             fi
           done
-          msg_run "ls -lah $PWD" || msg_warning "Nenhum arquivo .sig encontrado"
         else
           die "Erro na importação da chave GPG."
         fi
+
+        replicate '-'
+        msg_run "ls -lah $PWD" || msg_warning "Nenhum arquivo .sig encontrado"
         replicate '#'
 
     - name: Generate checksums
