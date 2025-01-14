@@ -451,7 +451,7 @@ runs:
         replicate '#'
         ROOT_BUILD_PATH="$PWD"
         SOURCE_PACKAGE_PATH="$PWD/source_repo"
-        echo "ROOT_BUILD_PATH=$ROOT_BUILOD_PATH" >> $GITHUB_ENV
+        echo "ROOT_BUILD_PATH=$ROOT_BUILD_PATH" >> $GITHUB_ENV
         echo "SOURCE_PACKAGE_PATH=$SOURCE_PACKAGE_PATH" >> $GITHUB_ENV
 
         msg_raw "ROOT_BUILD_PATH    : $ROOT_BUILD_PATH"
@@ -491,7 +491,7 @@ runs:
         if [[ -f "$PKGBUILD_FILE" ]]; then
           msg_ok "PKGBUILD encontrado : $PKGBUILD_FILE"
         else
-          die "PKGBUILD não encontrado em : $SOURCE_PACKAGE_PATH e subdiretórios"
+          die "ixe... Deu ruim, PKGBUILD não localizado em: $SOURCE_PACKAGE_PATH e subdiretórios"
         fi
         echo "PKGBUILD_FILE=$PKGBUILD_FILE"     >> $GITHUB_ENV
         echo "PKGBUILD_FOLDER=$PKGBUILD_FOLDER" >> $GITHUB_ENV
@@ -514,28 +514,9 @@ runs:
       run: |
         # Build package - Construr pacote
         source /tmp/send_telegram_message.sh
-        replicate '#'
-        msg_raw "Build environment  : ${{ inputs.build_env }}"
-        msg_raw "Package name       : ${{ inputs.package_name }}"
-        msg_raw "ROOT_BUILD_PATH    : ${{ env.ROOT_BUILD_PATH }}"
-        msg_raw "SOURCE_PACKAGE_PATH: ${{ env.SOURCE_PACKAGE_PATH }}"
 
-        msg_run 'sudo mkdir -p /home/packages /tmp/makepkg'
-        msg_run 'sudo chown builduser:builduser /home/packages /tmp/makepkg'
-
-        msg_run "cd ${{ env.SOURCE_PACKAGE_PATH }}"
-        replicate '-'
-        msg_raw "Current path: $PWD"
-        msg_run "ls -la $PWD"
-        replicate '-'
-        gitfolder="$(find -type f -name PKGBUILD | sed 's/PKGBUILD//')"
-
-        # Install all dependencies using yay
-        install_dependencies() {
-          # Extract dependencies from PKGBUILD
-          if [[ -z "$gitfolder" ]]; then
-            die "ixe... Deu ruim, PKGBUILD não localizado!"
-          fi
+        install_dependencies() { # Extract dependencies from PKGBUILD
+          msg_run "pushd ${{ env.PKGBUILD_FOLDER }}" || true
 
           # Detect and import GPG keys if present in PKGBUILD
           if [[ -f "PKGBUILD" ]]; then
@@ -544,7 +525,7 @@ runs:
               # Extract GPG key from PKGBUILD
               key=$(grep "validpgpkeys" PKGBUILD | sed 's/.*(\"\(.*\)\")/\1/')
 
-              if [ ! -z "$key" ]; then
+              if [[ ! -z "$key" ]]; then
                 msg_raw "Importing GPG key: $key"
                 # Try multiple keyservers to ensure key import succeeds
                 gpg --keyserver keyserver.ubuntu.com --recv-keys "$key" || \
@@ -555,21 +536,20 @@ runs:
             else
               msg_info "No PGP keys defined in PKGBUILD"
             fi
-          fi
 
-          msg_run "pushd $gitfolder" || true
-          source PKGBUILD
-          TAG_NAME="$pkgver-$pkgrel"
-          echo "TAG_NAME=$TAG_NAME"  >> $GITHUB_ENV
-          msg_info "TAG_NAME   : ${TAG_NAME}"
-          msg_info "depends    : ${depends[@]}"
-          msg_info "makedepends: ${makedepends[@]}"
+            source PKGBUILD
+            TAG_NAME="$pkgver-$pkgrel"
+            echo "TAG_NAME=$TAG_NAME"  >> $GITHUB_ENV
+            msg_info "TAG_NAME   : ${TAG_NAME}"
+            msg_info "depends    : ${depends[@]}"
+            msg_info "makedepends: ${makedepends[@]}"
 
-          if [[ -n "$depends" ]] || [[ -n "$makedepends" ]]; then
-            msg_info "Installing all dependencies..."
-            if ! yay -Sy --asdeps --needed --noanswerdiff --noconfirm "${depends[@]}" "${makedepends[@]}"; then
-              msg_run 'popd' || true
-              return 1
+            if [[ -n "$depends" ]] || [[ -n "$makedepends" ]]; then
+              msg_info "Installing all dependencies..."
+              if ! yay -Sy --asdeps --needed --noanswerdiff --noconfirm "${depends[@]}" "${makedepends[@]}"; then
+                msg_run 'popd' || true
+                return 1
+              fi
             fi
           fi
           msg_run 'popd' || true
@@ -583,8 +563,7 @@ runs:
             msg_raw "full_pkgname : $full_pkgname"
             echo "full_pkgname=$full_pkgname" >> $GITHUB_ENV
             msg_run "cp -f $full_pkgname /home/packages/ 2>/dev/null" || msg_warning 'No package found to move'
-            msg_ok "Build completed. Checking /home/packages:"
-            msg_run 'ls -la /home/packages'
+            msg_ok "Build completed with makepkg"
           else
             die "Build with makepkg fail."
           fi
@@ -597,10 +576,9 @@ runs:
             msg_raw "full_pkgname : $full_pkgname"
             echo "full_pkgname=$full_pkgname" >> $GITHUB_ENV
             msg_run "cp -f $full_pkgname /home/packages/ 2>/dev/null" || msg_warning 'No package found to move'
-            msg_ok "Build completed. Checking /home/packages:"
-            msg_run 'ls -la /home/packages'
+            msg_ok "Build completed with yay"
           else
-            die "Build with makepkg fail."
+            die "Build with yay fail."
           fi
         }
 
@@ -616,23 +594,40 @@ runs:
           else
             build_branch="${{ inputs.branch_type }}"
           fi
-
           msg_info '# Executar chrootbuild com o branch determinado'
           msg_run "sudo chrootbuild -H -p . -b ${build_branch}"
         }
 
-        msg_raw "Construindo pacote       : ${{ inputs.package_name }}"
-        msg_raw "Current package directory: $PWD"
-        replicate '#'
+        replicate '-'
+        msg_raw "inputs.url         : ${{ inputs.url }}"
+        msg_raw "inputs.repo_origem : ${{ inputs.repo_origem }}"
+        msg_raw "inputs.build_env   : ${{ inputs.build_env }}"
+        msg_raw "inputs.package_name: ${{ inputs.package_name }}"
+        msg_raw "ROOT_BUILD_PATH    : ${{ env.ROOT_BUILD_PATH }}"
+        msg_raw "SOURCE_PACKAGE_PATH: ${{ env.SOURCE_PACKAGE_PATH }}"
+        msg_raw "PKGBUILD_FILE      : ${{ env.PKGBUILD_FILE }}"
+        msg_raw "PKGBUILD_FOLDER    : ${{ env.PKGBUILD_FOLDER }}"
+        msg_raw "REPO_ORIGEM_URL    : ${{ env.REPO_ORIGEM_NAME }}"
+        msg_raw "REPO_ORIGEM_NAME   : ${{ env.REPO_ORIGEM_NAME }}"
+        msg_raw "REPO_ORIGEM_OWNER  : ${{ env.REPO_ORIGEM_OWNER }}"
+        replicate '-'
+
+        msg_run 'sudo mkdir -p /home/packages /tmp/makepkg'
+        msg_run 'sudo chown builduser:builduser /home/packages /tmp/makepkg'
+        replicate '-'
+        msg_run "pushd ${{ env.SOURCE_PACKAGE_PATH }}" || true
+        msg_raw "Iniciando a construção do pacote : ${{ inputs.package_name }}"
+        msg_raw "Current path                     : $PWD"
         msg_run "ls -la $PWD"
-        replicate '#'
+        replicate '-'
 
         if ! install_dependencies; then
           msg_info "depends    : ${depends[@]}"
           msg_info "makedepends: ${makedepends[@]}"
-          die "Fail for install dependencies with yay"
+          die "Falha ao instalar dependências com yay"
         fi
-        msg_run "pushd $gitfolder" || true
+
+        msg_run "pushd ${{ env.PKGBUILD_FOLDER }}" || true
         #make_with_chrootbuild
         #make_with_yay
         make_with_makepkg
@@ -644,9 +639,9 @@ runs:
           ${{ inputs.extra_command }}
         fi
 
-        msg_info '# Debug: Mostrar conteúdo do diretório após o build'
+        msg_info '#Conteúdo dos diretórios após o build'
         msg_run "ls -lah $PWD"
-        msg_run "ls -lah $SOURCE_PACKAGE_PATH"
+        msg_run "ls -lah ${{ env.PKGBUILD_FOLDER }}"
         msg_run 'ls -lah /home/packages'
         replicate '#'
 
