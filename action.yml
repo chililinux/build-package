@@ -449,34 +449,30 @@ runs:
         # Download the source code
         source /tmp/send_telegram_message.sh
         replicate '#'
-        export REPO_OWNER=""
-        export REPO_NAME=""
-        if [[ "${{ inputs.build_env }}" == "aur" ]]; then
-          msg_raw "Cloning AUR package from: ${{ inputs.url }}"
-          msg_run "git clone ${{ inputs.url }} aur_package"
+        PATH_SOURCE_PACKAGE="$PWD/source_repo"
+        echo "PATH_SOURCE_PACKAGE=$PATH_SOURCE_PACKAGE" >> $GITHUB_ENV
 
-          if [[ -d "aur_package" ]]; then
-            msg_run 'cd aur_package'
+        msg_raw "PATH_SOURCE_PACKAGE : $PATH_SOURCE_PACKAGE"
+        msg_raw "inputs.url          : ${{ inputs.url }}"
+        msg_raw "inputs.build_env    : ${{ inputs.build_env }}"
+        msg_raw "inputs.repo_origem  : ${{ inputs.repo_origem }}"
 
-            # Extrair informações do repositório clonado
-            REPO_ORIGEM_URL="${{ inputs.repo_origem }}"
-            REPO_ORIGEM_NAME=$(basename -s .git "$REPO_ORIGEM_URL")
-            REPO_ORIGEM_OWNER=$(echo "$REPO_ORIGEM_URL" | awk -F[/:] '{print $(NF-1)}')
-
-            # Exportar para o ambiente do GitHub Actions
-            echo "REPO_ORIGEM_NAME=$REPO_ORIGEM_NAME"   >> $GITHUB_ENV
-            echo "REPO_ORIGEM_OWNER=$REPO_ORIGEM_OWNER" >> $GITHUB_ENV
-
-            if [[ ! -f "PKGBUILD" ]]; then
-              die "Error: PKGBUILD not found in the AUR package"
-            fi
-          else
-            die "Error: Failed to clone AUR package"
-          fi
-        elif [[ -n "${{ inputs.url }}" ]]; then
-          msg_raw "Cloning repository from: ${{ inputs.url }}"
+        if [[ -n "${{ inputs.url }}" ]]; then
+          msg_raw "Cloning package git repository from: ${{ inputs.url }}"
           msg_run "git clone ${{ inputs.url }}.git source_repo"
           msg_run 'cd source_repo'
+          msg_raw "current path: $PWD"
+
+          if [[ "${{ inputs.build_env }}" != "aur" ]]; then
+            if [[ -n "${{ inputs.git_branch }}" ]]; then
+              msg_raw "Checking out branch: ${{ inputs.git_branch }}"
+              msg_run "git checkout ${{ inputs.git_branch }}"
+            fi
+          fi
+
+          if [[ ! -f "PKGBUILD" ]]; then
+            die "PKGBUILD não encontrado em : $PWD"
+          fi
 
           # Extrair informações do repositório clonado
           REPO_ORIGEM_URL="${{ inputs.repo_origem }}"
@@ -486,11 +482,6 @@ runs:
           # Exportar para o ambiente do GitHub Actions
           echo "REPO_ORIGEM_NAME=$REPO_ORIGEM_NAME"   >> $GITHUB_ENV
           echo "REPO_ORIGEM_OWNER=$REPO_ORIGEM_OWNER" >> $GITHUB_ENV
-
-          if [[ -n "${{ inputs.git_branch }}" ]]; then
-            msg_raw "Checking out branch: ${{ inputs.git_branch }}"
-            msg_run "git checkout ${{ inputs.git_branch }}"
-          fi
         else
           msg_warning "No URL provided, assuming already in the correct repository"
         fi
@@ -511,8 +502,8 @@ runs:
 
         msg_info '# Se entramos em um diretório no passo anterior, vamos garantir que estamos nele'
         if [[ "${{ inputs.build_env }}" == "aur" ]]; then
-          if [[ -d "aur_package" ]]; then
-            msg_run 'cd aur_package'
+          if [[ -d "source_repo" ]]; then
+            msg_run 'cd source_repo'
           fi
         else
           if [[ -d "source_repo" ]]; then
@@ -603,7 +594,7 @@ runs:
         make_with_chrootbuild() {
           msg_info '# Ensure architecture is set to x86_64'
           sed -i "/^arch=/c\arch=('x86_64')" PKGBUILD
-          msg_info "Build for x86_64"
+          msg_info "Build arch=x86_64"
 
           msg_info '# Determinar o branch de build'
           if [ "${{ inputs.build_env }}" == "extra" ]; then
