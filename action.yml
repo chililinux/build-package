@@ -523,7 +523,7 @@ runs:
 
         install_dependencies() { # Extract dependencies from PKGBUILD
           msg_info "install_dependencies()"
-          msg_run "pushd ${{ env.PKGBUILD_FOLDER }}" || true
+          msg_run "pushd ${{ env.PKGBUILD_FOLDER }} >/dev/null" || true
 
           # Detect and import GPG keys if present in PKGBUILD
           if [[ -f "PKGBUILD" ]]; then
@@ -566,12 +566,12 @@ runs:
         make_with_makepkg() {
           msg_info "make_with_makepkg()"
           if makepkg -s --noconfirm --noprogressbar --nodeps --skipchecksums; then
+            msg_ok "Build completed with makepkg"
             pkgname="${{ inputs.package_name }}"
             full_pkgname="$(find . -type f -iname "$pkgname*.pkg.tar.zst" -print)"
             msg_raw "full_pkgname : $full_pkgname"
             echo "full_pkgname=$full_pkgname" >> $GITHUB_ENV
             msg_run "cp -f $full_pkgname /home/packages/ 2>/dev/null" || msg_warning 'No package found to move'
-            msg_ok "Build completed with makepkg"
             return 0
           else
             die "Build with makepkg fail."
@@ -581,12 +581,12 @@ runs:
         make_with_yay() {
           msg_info "make_with_yay()"
           if yay -Sy --asdeps --needed --noanswerdiff --noconfirm; then
+            msg_ok "Build completed with yay"
             pkgname="${{ inputs.package_name }}"
             full_pkgname="$(find . -type f -iname "$pkgname*.pkg.tar.zst" -print)"
             msg_raw "full_pkgname : $full_pkgname"
             echo "full_pkgname=$full_pkgname" >> $GITHUB_ENV
             msg_run "cp -f $full_pkgname /home/packages/ 2>/dev/null" || msg_warning 'No package found to move'
-            msg_ok "Build completed with yay"
             return 0
           else
             die "Build with yay fail."
@@ -628,7 +628,7 @@ runs:
         msg_run 'sudo chown builduser:builduser /home/packages /tmp/makepkg'
         msg_run 'sudo chmod 1777 /home/packages /tmp/makepkg'
         replicate '-'
-        msg_run "pushd ${{ env.SOURCE_PACKAGE_PATH }}" || true
+        msg_run "pushd ${{ env.SOURCE_PACKAGE_PATH }}  >/dev/null" || true
         msg_raw "Iniciando a construção do pacote : ${{ inputs.package_name }}"
         msg_raw "Current path                     : $PWD"
         msg_run "ls -la $PWD"
@@ -640,7 +640,7 @@ runs:
           die "Falha ao instalar dependências com yay"
         fi
 
-        msg_run "pushd ${{ env.PKGBUILD_FOLDER }}"
+        msg_run "pushd ${{ env.PKGBUILD_FOLDER }} >/dev/null"
         #make_with_chrootbuild
         #make_with_yay
         make_with_makepkg
@@ -686,9 +686,11 @@ runs:
           for p in *pkg.tar.zst; do
             [ -e "$p" ] || { msg_info "Nenhum pacote encontrado para assinar."; break; }
             # Assina todos os pacotes encontrados
-            msg_raw "Assinando pacote: $p"
+            msg_info "Assinando pacote: $p"
             if ! gpg --pinentry-mode loopback --passphrase "${{ inputs.gpg_passphrase }}" --detach-sign "${p}"; then
               msg_warning "Erro ao assinar o pacote: $p"
+            else
+              msg_ok "Pacote assinado com sucesso: $p"
             fi
           done
         else
@@ -705,18 +707,25 @@ runs:
         #Generate checksums
         source /tmp/send_telegram_message.sh
         replicate '#'
-        msg_run 'cd /home/packages'
+
+        if [ ! -d "/home/packages" ]; then
+          die "Diretório /home/packages não encontrado."
+        fi
+        msg_run 'cd /home/packages' || die "Erro ao acessar /home/packages."
         msg_run "ls -lah $PWD"
 
         for p in *pkg.tar.zst; do
+          [ -e "$p" ] || { msg_info "Nenhum pacote encontrado para gerar checksum."; break; }
           msg_info "Gerando MD5 para: $p"
           if md5sum "$p"     >> "$p.md5"; then
             msg_ok "MD5 gerado para: $p"
           else
-            msg_warning "Falha na geração de MD5 para: $p"
+            die "Falha na geração de MD5 para: $p"
           fi
         done
-        msg_run 'ls -lah $PWD *.md5' || msg_warning 'Nenhum arquivo MD5 encontrado'
+
+        replicate '-'
+        msg_run "ls -lah $PWD"
         replicate '#'
 
     - name: Push the package to the repository
@@ -914,7 +923,7 @@ runs:
         #Prepare Package for release (7z)
         source /tmp/send_telegram_message.sh
         replicate '#'
-        pushd /home/packages || true
+        pushd /home/packages >/dev/null || true
         # Prepara a mensagem
         message="⏳ <b>[step 3/4] build-package - Prepare Package for release (7z)</b>
         <b>Job:</b> <code>#${GITHUB_RUN_NUMBER}</code>
