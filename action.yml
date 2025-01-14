@@ -607,7 +607,7 @@ runs:
           sudo chrootbuild -H -p . -b ${build_branch}
         }
 
-        make_resul() {
+        make_result() {
           local msg="$"
           source PKGBUILD
           msg_ok "Build of ${{ inputs.package_name }} completed with yay"
