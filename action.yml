@@ -424,8 +424,8 @@ runs:
           msg_raw "Configurando para pacote AUR: ${{ inputs.package_name }}"
           msg_info '#Configurações específicas para AUR'
           sudo sed -i 's/^#MAKEFLAGS="-j2"/MAKEFLAGS="-j$(nproc)"/' /etc/makepkg.conf
-          sudo sed -i 's/^#BUILDDIR/BUILDDIR/' /etc/makepkg.conf
-          sudo sed -i 's/^#PKGDEST/PKGDEST/' /etc/makepkg.conf
+          #sudo sed -i 's/^#BUILDDIR/BUILDDIR/' /etc/makepkg.conf
+          #sudo sed -i 's/^#PKGDEST/PKGDEST/' /etc/makepkg.conf
 
           msg_info '#Habilitar o repositório multilib (necessário para alguns pacotes AUR)'
           sudo sed -i '/\[multilib\]/,/Include/s/^#//' /etc/pacman.conf
