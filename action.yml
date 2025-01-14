@@ -449,19 +449,22 @@ runs:
         # Download the source code
         source /tmp/send_telegram_message.sh
         replicate '#'
-        PATH_SOURCE_PACKAGE="$PWD/source_repo"
-        echo "PATH_SOURCE_PACKAGE=$PATH_SOURCE_PACKAGE" >> $GITHUB_ENV
+        ROOT_BUILD_PATH="$PWD"
+        SOURCE_PACKAGE_PATH="$PWD/source_repo"
+        echo "ROOT_BUILD_PATH=$ROOT_BUILOD_PATH" >> $GITHUB_ENV
+        echo "SOURCE_PACKAGE_PATH=$SOURCE_PACKAGE_PATH" >> $GITHUB_ENV
 
-        msg_raw "PATH_SOURCE_PACKAGE : $PATH_SOURCE_PACKAGE"
-        msg_raw "inputs.url          : ${{ inputs.url }}"
-        msg_raw "inputs.repo_origem  : ${{ inputs.repo_origem }}"
-        msg_raw "inputs.build_env    : ${{ inputs.build_env }}"
+        msg_raw "ROOT_BUILD_PATH    : $ROOT_BUILD_PATH"
+        msg_raw "SOURCE_PACKAGE_PATH: $SOURCE_PACKAGE_PATH"
+        msg_raw "inputs.url         : ${{ inputs.url }}"
+        msg_raw "inputs.repo_origem : ${{ inputs.repo_origem }}"
+        msg_raw "inputs.build_env   : ${{ inputs.build_env }}"
         replicate '-'
 
         if [[ -n "${{ inputs.url }}" ]]; then
           msg_raw "Cloning git repository from: ${{ inputs.url }}"
-          msg_run "git clone ${{ inputs.url }}.git source_repo"
-          msg_run 'cd source_repo'
+          msg_run "git clone ${{ inputs.url }}.git $SOURCE_PACKAGE_PATH"
+          msg_run 'cd $SOURCE_PACKAGE_PATH'
           msg_raw "current path: $PWD"
 
           if [[ "${{ inputs.build_env }}" != "aur" ]]; then
@@ -469,13 +472,6 @@ runs:
               msg_raw "Checking out branch: ${{ inputs.git_branch }}"
               msg_run "git checkout ${{ inputs.git_branch }}"
             fi
-          fi
-
-          pkgbuild_file="$(find . -path './.git' -prune -o -name 'PKGBUILD' -print)"
-          if [[ -f "$pkgbuild_file" ]]; then
-            msg_info "PKGBUILD encontrado em : $PWD/$pkgbuild_file"
-          else
-            die "PKGBUILD não encontrado em : $PWD e subdiretórios"
           fi
 
           # Extrair informações do repositório clonado
@@ -489,6 +485,16 @@ runs:
         else
           msg_warning "No URL provided, assuming already in the correct repository"
         fi
+
+        PKGBUILD_FILE="$(find $SOURCE_PACKAGE_PATH -path './.git' -prune -o -name 'PKGBUILD' -print)"
+        PKGBUILD_FOLDER="$(find $SOURCE_PACKAGE_PATH -type f -name PKGBUILD | sed 's/PKGBUILD//')"
+        if [[ -f "$PKGBUILD_FILE" ]]; then
+          msg_info "PKGBUILD encontrado em : $SOURCE_PACKAGE_PATH/$PKGBUILD_FILE"
+        else
+          die "PKGBUILD não encontrado em : $SOURCE_PACKAGE_PATH e subdiretórios"
+        fi
+        echo "PKGBUILD_FILE=$PKGBUILD_FILE"     >> $GITHUB_ENV
+        echo "PKGBUILD_FOLDER=$PKGBUILD_FOLDER" >> $GITHUB_ENV
         replicate '#'
 
     - name: Build package
@@ -497,29 +503,20 @@ runs:
         # Build package - Construr pacote
         source /tmp/send_telegram_message.sh
         replicate '#'
-        msg_raw "Build environment: ${{ inputs.build_env }}"
-        msg_raw "Package name     : ${{ inputs.package_name }}"
+        msg_raw "Build environment  : ${{ inputs.build_env }}"
+        msg_raw "Package name       : ${{ inputs.package_name }}"
+        msg_raw "ROOT_BUILD_PATH    : ${{ env.ROOT_BUILD_PATH }}"
+        msg_raw "SOURCE_PACKAGE_PATH: ${{ env.SOURCE_PACKAGE_PATH }}"
 
-        msg_info '# Create and set permissions for $PKGDEST and $SRCDEST'
         msg_run 'sudo mkdir -p /home/packages /tmp/makepkg'
         msg_run 'sudo chown builduser:builduser /home/packages /tmp/makepkg'
 
-        msg_info '# Se entramos em um diretório no passo anterior, vamos garantir que estamos nele'
-        if [[ "${{ inputs.build_env }}" == "aur" ]]; then
-          if [[ -d "source_repo" ]]; then
-            msg_run 'cd source_repo'
-          fi
-        else
-          if [[ -d "source_repo" ]]; then
-            msg_run 'cd source_repo'
-          fi
-        fi
-        gitfolder=$(find -type f -name PKGBUILD | sed 's/PKGBUILD//')
-
-        msg_info '# Debug: Show current directory and contents'
+        msg_run "cd ${{ env.SOURCE_PACKAGE_PATH }}"
         replicate '-'
+        msg_raw "Current path: $PWD"
         msg_run "ls -la $PWD"
         replicate '-'
+        gitfolder="$(find -type f -name PKGBUILD | sed 's/PKGBUILD//')"
 
         # Install all dependencies using yay
         install_dependencies() {
@@ -529,7 +526,7 @@ runs:
           fi
 
           # Detect and import GPG keys if present in PKGBUILD
-          if [ -f "PKGBUILD" ]; then
+          if [[ -f "PKGBUILD" ]]; then
             msg_info "Checking for required PGP keys..."
             if grep -q "validpgpkeys" PKGBUILD; then
               # Extract GPG key from PKGBUILD
@@ -637,7 +634,7 @@ runs:
 
         msg_info '# Debug: Mostrar conteúdo do diretório após o build'
         msg_run "ls -lah $PWD"
-        msg_run "ls -lah $PATH_SOURCE_PACKAGE"
+        msg_run "ls -lah $SOURCE_PACKAGE_PATH"
         msg_run 'ls -lah /home/packages'
         replicate '#'
 
