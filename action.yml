@@ -589,10 +589,16 @@ runs:
 
         make_with_yay() {
           msg_info "make_with_yay()"
+          source PKGBUILD
           if yay -Sy --asdeps --needed --noanswerdiff --noconfirm; then
-            msg_ok "Build completed with yay"
-            pkgname="${{ inputs.package_name }}"
+            msg_ok "Build of ${{ inputs.package_name }} completed with yay"
+            msg_run "ls -la $PWD"
+            #pkgname="${{ inputs.package_name }}"
             full_pkgname="$(find . -type f -iname "$pkgname*.pkg.tar.zst" -print)"
+            msg_raw "pkgname      : $pkgname"
+            msg_raw "pkgver       : $pkgver"
+            msg_raw "pkgrel       : $pkgrel"
+            msg_raw "pkgdesc      : $pkgdesc"
             msg_raw "full_pkgname : $full_pkgname"
             echo "full_pkgname=$full_pkgname" >> $GITHUB_ENV
             msg_run "cp -f $full_pkgname /home/packages/ 2>/dev/null" || msg_warning 'No package found to move'
