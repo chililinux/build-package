@@ -580,7 +580,7 @@ runs:
           msg_info "make_with_yay()"
           error_log=$(mktemp) # Cria um arquivo temporário para os erros
           #if yay -Sy --asdeps --needed --noanswerdiff --noconfirm 2> >(tee "$error_log" >&2); then
-          if yay -S --builddir "$PWD" --rebuild --asdeps --needed --noanswerdiff --noconfirm 2> >(tee "$error_log" >&2); then
+          if yay -S --builddir "$PWD" --rebuild --asdeps --needed --noanswerdiff --noconfirm "${{ inputs.package_name }}" 2> >(tee "$error_log" >&2); then
             make_result "Build of ${{ inputs.package_name }} completed with yay"
             return 0
           else
