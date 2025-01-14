@@ -622,7 +622,7 @@ runs:
           msg_raw "pkgdesc      : $pkgdesc"
           msg_raw "full_pkgname : $full_pkgname"
           echo "full_pkgname=$full_pkgname" >> $GITHUB_ENV
-          msg_run "cp -f $full_pkgname /home/packages/ 2>/dev/null" || msg_warning 'No package found to move'
+          msg_run "cp -f $full_pkgname /home/packages/" || msg_warning 'No package found to move'
         }
 
         replicate '-'
