@@ -566,9 +566,10 @@ runs:
         make_with_makepkg() {
           msg_info "make_with_makepkg()"
           if makepkg -s --noconfirm --noprogressbar --nodeps --skipchecksums; then
-            msg_ok "Build completed with makepkg"
+            msg_ok "Build of ${{ inputs.package_name }} completed with makepkg"
             pkgname="${{ inputs.package_name }}"
             full_pkgname="$(find . -type f -iname "$pkgname*.pkg.tar.zst" -print)"
+            msg_raw "pkgname      : $pkgname"
             msg_raw "full_pkgname : $full_pkgname"
             echo "full_pkgname=$full_pkgname" >> $GITHUB_ENV
             msg_run "cp -f $full_pkgname /home/packages/ 2>/dev/null" || msg_warning 'No package found to move'
