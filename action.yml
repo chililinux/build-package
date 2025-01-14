@@ -521,24 +521,23 @@ runs:
         # Build package - Construr pacote
         source /tmp/send_telegram_message.sh
 
-        install_dependencies() { # Extract dependencies from PKGBUILD
+        install_dependencies() {
           msg_info "install_dependencies()"
           msg_run "pushd ${{ env.PKGBUILD_FOLDER }} >/dev/null" || true
 
-          # Detect and import GPG keys if present in PKGBUILD
           if [[ -f "PKGBUILD" ]]; then
             msg_info "Checking for required PGP keys..."
             if grep -q "validpgpkeys" PKGBUILD; then
               # Extract GPG key from PKGBUILD
               key=$(grep "validpgpkeys" PKGBUILD | sed 's/.*(\"\(.*\)\")/\1/')
-
+              # Detect and import GPG keys if present in PKGBUILD
               if [[ ! -z "$key" ]]; then
                 msg_raw "Importing GPG key: $key"
                 # Try multiple keyservers to ensure key import succeeds
                 gpg --keyserver keyserver.ubuntu.com --recv-keys "$key" || \
                 gpg --keyserver keys.gnupg.net --recv-keys "$key" || \
                 gpg --keyserver hkp://pgp.mit.edu --recv-keys "$key" || \
-                msg_warning "Warning: Failed to import key $key"
+                msg_warning "Failed to import key $key"
               fi
             else
               msg_info "No PGP keys defined in PKGBUILD"
@@ -551,6 +550,7 @@ runs:
             msg_info "depends    : ${depends[@]}"
             msg_info "makedepends: ${makedepends[@]}"
 
+            # Extract dependencies from PKGBUILD
             if [[ -n "$depends" ]] || [[ -n "$makedepends" ]]; then
               msg_info "Installing all dependencies..."
               if ! yay -Sy --asdeps --needed --noanswerdiff --noconfirm "${depends[@]}" "${makedepends[@]}"; then
@@ -564,36 +564,43 @@ runs:
         }
 
         make_with_makepkg() {
-          msg_info "make_with_makepkg()"
-          error_log=$(mktemp) # Cria um arquivo temporário para os erros
-          if makepkg -d --noconfirm --noprogressbar --nodeps --skipchecksums 2> >(tee "$error_log" >&2); then
-            make_result "Build of ${{ inputs.package_name }} completed with makepkg"
+          [[ -e PKGBUILD ]] && source PKGBUILD || die "ixe... Deu ruim, PKGBUILD não localizado em: $PWD"
+          [[ $? -ne 0 ]] && die "Erro ao carregar o PKGBUILD."
+          pkg_to_make="$pkgname"
+          msg_info "Build package $pkg_to_make with make_with_makepkg()"
+          error_log=$(mktemp)
+          if makepkg -s --noconfirm --noprogressbar --nodeps --skipchecksums 2> >(tee "$error_log" >&2); then
+            make_result "Build of ${pkg_to_make} completed with makepkg"
             return 0
           else
             last_errors=$(tail -n 2 "$error_log") # Mostra as duas últimas linhas de erro
             echo "last_errors=$last_errors" >> $GITHUB_ENV
-            die "Build with makepkg fail."
+            die "Build ${pkg_to_make} with makepkg fail."
           fi
         }
 
         make_with_yay() {
-          msg_info "make_with_yay()"
-          source PKGBUILD
+          [[ -e PKGBUILD ]] && source PKGBUILD || die "ixe... Deu ruim, PKGBUILD não localizado em: $PWD"
+          [[ $? -ne 0 ]] && die "Erro ao carregar o PKGBUILD."
           pkg_to_make="aur/$pkgname"
-          error_log=$(mktemp) # Cria um arquivo temporário para os erros
+          msg_info "Build package $pkg_to_make with make_with_yay()"
+          error_log=$(mktemp)
           if yay -S --builddir "$PWD" --rebuildtree --asdeps --needed --noanswerdiff --noconfirm "${pkg_to_make}" 2> >(tee "$error_log" >&2); then
             mv -f "$PWD/$pkgname"/*.zst "${{ env.PKGBUILD_FOLDER }}/"
-            make_result "Build of ${{ inputs.package_name }} completed with yay"
+            make_result "Build of ${pkg_to_make} completed with yay"
             return 0
           else
             last_errors=$(tail -n 2 "$error_log") # Mostra as duas últimas linhas de erro
             echo "last_errors=$last_errors" >> $GITHUB_ENV
-            die "Build with yay fail."
+            die "Build ${pkg_to_make} with yay fail."
           fi
         }
 
         make_with_chrootbuild() {
-          msg_info "make_with_chrootbuild()"
+          [[ -e PKGBUILD ]] && source PKGBUILD || die "ixe... Deu ruim, PKGBUILD não localizado em: $PWD"
+          [[ $? -ne 0 ]] && die "Erro ao carregar o PKGBUILD."
+          pkg_to_make="$pkgname"
+          msg_info "Build package $pkg_to_make with make_with_chrootbuild()"
           sed -i "/^arch=/c\arch=('x86_64')" PKGBUILD
           msg_info "Build arch=x86_64"
 
