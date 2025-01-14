@@ -582,7 +582,7 @@ runs:
           pkg_to_make="aur/$pkgname"
           error_log=$(mktemp) # Cria um arquivo temporário para os erros
           if yay -S --builddir "$PWD" --rebuild --asdeps --needed --noanswerdiff --noconfirm "${pkg_to_make}" 2> >(tee "$error_log" >&2); then
-            mv -f $PWD/$pkgname/*.zst ../
+            cp -f "$PWD/$pkgname"/*.zst "${{ env.PKGBUILD_FOLDER }}/"
             make_result "Build of ${{ inputs.package_name }} completed with yay"
             return 0
           else
