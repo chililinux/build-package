@@ -206,7 +206,7 @@ runs:
         msg_ok() {
           local msg="$1"
           msg="$(sed 's/<[^>]*>//g' <<< "$msg")" # Remove as tags HTML
-          echo -e "BP=>${cyan}feito: ${green}${msg}${reset}"
+          echo -e "BP=>${cyan}feito  : ${green}${msg}${reset}"
         }
         export -f msg_ok
 
@@ -220,7 +220,7 @@ runs:
         msg_info() {
           local msg="$1"
           msg="$(sed 's/<[^>]*>//g' <<< "$msg")" # Remove as tags HTML
-          echo -e "BP=>${yellow}info   : ${cyan}${msg}${reset}"
+          echo -e "BP=>${cyan}info   : ${yellow}${msg}${reset}"
         }
         export -f msg_info
 
@@ -501,8 +501,8 @@ runs:
         msg_raw "Package name     : ${{ inputs.package_name }}"
 
         msg_info '# Create and set permissions for $PKGDEST and $SRCDEST'
-        msg_run 'sudo mkdir -p /home/packages /home/sources /tmp/makepkg'
-        msg_run 'sudo chown builduser:builduser /home/packages /home/sources /tmp/makepkg'
+        msg_run 'sudo mkdir -p /home/packages /tmp/makepkg'
+        msg_run 'sudo chown builduser:builduser /home/packages /tmp/makepkg'
 
         msg_info '# Se entramos em um diretório no passo anterior, vamos garantir que estamos nele'
         if [[ "${{ inputs.build_env }}" == "aur" ]]; then
@@ -573,7 +573,7 @@ runs:
             full_pkgname="$(find . -type f -iname "$pkgname*.pkg.tar.zst" -print)"
             msg_raw "full_pkgname : $full_pkgname"
             echo "full_pkgname=$full_pkgname" >> $GITHUB_ENV
-            msg_run "mv $full_pkgname /home/packages/ 2>/dev/null" || msg_warning 'No package found to move'
+            msg_run "cp -f $full_pkgname /home/packages/ 2>/dev/null" || msg_warning 'No package found to move'
             msg_ok "Build completed. Checking /home/packages:"
             msg_run 'ls -la /home/packages'
           else
@@ -587,7 +587,7 @@ runs:
             full_pkgname="$(find . -type f -iname "$pkgname*.pkg.tar.zst" -print)"
             msg_raw "full_pkgname : $full_pkgname"
             echo "full_pkgname=$full_pkgname" >> $GITHUB_ENV
-            msg_run "mv $full_pkgname /home/packages/ 2>/dev/null" || msg_warning 'No package found to move'
+            msg_run "cp -f $full_pkgname /home/packages/ 2>/dev/null" || msg_warning 'No package found to move'
             msg_ok "Build completed. Checking /home/packages:"
             msg_run 'ls -la /home/packages'
           else
@@ -629,16 +629,16 @@ runs:
         make_with_makepkg
         msg_run 'popd' || true
 
-        msg_info '# Executa comando extra, se fornecido'
         if [[ -n "${{ inputs.extra_command }}" ]]; then
+          msg_info '# Executa comando extra, se fornecido'
           msg_raw "Executando comando extra: ${{ inputs.extra_command }}"
           ${{ inputs.extra_command }}
         fi
 
         msg_info '# Debug: Mostrar conteúdo do diretório após o build'
-        msg_run "ls -la $PWD"
-        msg_run 'ls -la /home/sources'
-        msg_run 'ls -la /home/packages'
+        msg_run "ls -lah $PWD"
+        msg_run "ls -lah $PATH_SOURCE_PACKAGE"
+        msg_run 'ls -lah /home/packages'
         replicate '#'
 
     - name: Sign Package
@@ -648,6 +648,7 @@ runs:
         source /tmp/send_telegram_message.sh
         replicate '#'
         msg_run 'cd /home/packages'
+        msg_raw "current path: $PWD"
         msg_run "ls -lah $PWD"
 
         # Assina todos os pacotes encontrados
@@ -661,7 +662,7 @@ runs:
               msg_warning "Erro ao assinar o pacote: $p"
             fi
           done
-          msg_run 'ls -lah $PWD *.sig*' || msg_warning "Nenhum arquivo .sig encontrado"
+          msg_run "ls -lah $PWD" || msg_warning "Nenhum arquivo .sig encontrado"
         else
           die "Erro na importação da chave GPG."
         fi
