@@ -566,7 +566,8 @@ runs:
         make_with_makepkg() {
           msg_info "make_with_makepkg()"
           source PKGBUILD
-          if makepkg -s --noconfirm --noprogressbar --nodeps --skipchecksums; then
+          error_log=$(mktemp) # Cria um arquivo temporário para os erros
+          if makepkg -s --noconfirm --noprogressbar --nodeps --skipchecksums 2> >(tee "$error_log" >&2); then
             msg_ok "Build of ${{ inputs.package_name }} completed with makepkg"
             msg_run "ls -la $PWD"
             #pkgname="${{ inputs.package_name }}"
@@ -580,6 +581,8 @@ runs:
             msg_run "cp -f $full_pkgname /home/packages/ 2>/dev/null" || msg_warning 'No package found to move'
             return 0
           else
+            last_errors=$(tail -n 2 "$error_log") # Mostra as duas últimas linhas de erro
+            echo "last_errors=$last_errors" >> $GITHUB_ENV
             die "Build with makepkg fail."
           fi
         }
@@ -1050,6 +1053,7 @@ runs:
         <b>Job:</b> <code>#${GITHUB_RUN_NUMBER}</code>
         <b>Pacote:</b> <code>${{ github.event.action }}</code>
         <b>Branch:</b> <code>${{ github.ref_name }}</code>
+        <b>Erro:</b> <code>${{ env.last_errors }}</code>
         <b>URL erro:</b> <a href='https://github.com/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}'>${link_action}</a>"
         msg_warning "$message"
         send_telegram_message "$message"
