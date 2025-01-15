@@ -33,7 +33,7 @@ on:
   repository_dispatch:
     types:
       - "*"
-#     - "!aur-*"
+      - "aur-*"
   workflow_dispatch:
     inputs:
       branch_type:
