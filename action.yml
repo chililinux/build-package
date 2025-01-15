@@ -272,17 +272,19 @@ runs:
         source /tmp/send_telegram_message.sh
         replicate '='
         REPO_URL="${{ inputs.url }}"
-        echo "REPO_URL=$REPO_URL" >> $GITHUB_ENV
         COMMIT_HASH="$(git ls-remote $REPO_URL HEAD | awk '{print $1}')"
-        #echo "COMMIT_HASH=$COMMIT_HASH" >> $GITHUB_ENV
-        msg_raw "Last commit hash: $COMMIT_HASH"
+        COMMIT_MESSAGE=
 
         # Buscar informações do commit remoto
-        git fetch $REPO_URL $COMMIT_HASH
+        [[ -n "$COMMIT_HASH" ]] && git fetch $REPO_URL $COMMIT_HASH
 
         # Obter a mensagem do commit a partir do hash
-        COMMIT_MESSAGE="$(git log -1 --format=%B $COMMIT_HASH)"
-        #echo "COMMIT_MESSAGE=$COMMIT_MESSAGE" >> $GITHUB_ENV
+        [[ -n "$COMMIT_HASH" ]] && COMMIT_MESSAGE="$(git log -1 --format=%B $COMMIT_HASH)"
+
+        echo "REPO_URL=$REPO_URL"             >> $GITHUB_ENV
+        echo "COMMIT_HASH=$COMMIT_HASH"       >> $GITHUB_ENV
+        echo "COMMIT_MESSAGE=$COMMIT_MESSAGE" >> $GITHUB_ENV
+        msg_raw "Last commit hash   : $COMMIT_HASH"
         msg_raw "Last commit message: $COMMIT_MESSAGE"
         replicate '='
 
