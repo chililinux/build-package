@@ -532,38 +532,36 @@ runs:
           msg_info "install_dependencies()"
           msg_run "pushd ${{ env.PKGBUILD_FOLDER }} >/dev/null" || true
 
-          if [[ -f "PKGBUILD" ]]; then
-            msg_info "Checking for required PGP keys..."
-            if grep -q "validpgpkeys" PKGBUILD; then
-              # Extract GPG key from PKGBUILD
-              key=$(grep "validpgpkeys" PKGBUILD | sed 's/.*(\"\(.*\)\")/\1/')
-              # Detect and import GPG keys if present in PKGBUILD
-              if [[ ! -z "$key" ]]; then
-                msg_raw "Importing GPG key: $key"
-                # Try multiple keyservers to ensure key import succeeds
-                gpg --keyserver keyserver.ubuntu.com --recv-keys "$key" || \
-                gpg --keyserver keys.gnupg.net --recv-keys "$key" || \
-                gpg --keyserver hkp://pgp.mit.edu --recv-keys "$key" || \
-                msg_warning "Failed to import key $key"
+          [[ -e PKGBUILD ]] && source PKGBUILD || die "ixe... Deu ruim, PKGBUILD não localizado em: $PWD"
+          [[ $? -ne 0 ]] && die "Erro ao carregar o PKGBUILD."
+
+          msg_info "Checking for required PGP keys..."
+          for key in "${validpgpkeys[@]}"
+            if [[ ! -z "$key" ]]; then
+              msg_raw "Importing GPG key: $key"
+              # Tenta importar a chave de diferentes servidores de chaves
+              if gpg --keyserver keyserver.ubuntu.com --recv-keys "$key" || \
+                 gpg --keyserver keys.gnupg.net       --recv-keys "$key" || \
+                 gpg --keyserver hkp://pgp.mit.edu    --recv-keys "$key"; then
+                msg_ok "Successfully imported key: $key"
+              else
+                msg_warning "Failed to import key: $key"
               fi
-            else
-              msg_info "No PGP keys defined in PKGBUILD"
             fi
+          done
 
-            source PKGBUILD
-            TAG_NAME="$pkgver-$pkgrel"
-            echo "TAG_NAME=$TAG_NAME"  >> $GITHUB_ENV
-            msg_info "TAG_NAME   : ${TAG_NAME}"
-            msg_info "depends    : ${depends[@]}"
-            msg_info "makedepends: ${makedepends[@]}"
+          TAG_NAME="$pkgver-$pkgrel"
+          echo "TAG_NAME=$TAG_NAME"  >> $GITHUB_ENV
+          msg_info "TAG_NAME   : ${TAG_NAME}"
+          msg_info "depends    : ${depends[@]}"
+          msg_info "makedepends: ${makedepends[@]}"
 
-            # Extract dependencies from PKGBUILD
-            if [[ -n "$depends" ]] || [[ -n "$makedepends" ]]; then
-              msg_info "Installing all dependencies..."
-              if ! yay -Sy --asdeps --needed --noanswerdiff --noconfirm "${depends[@]}" "${makedepends[@]}"; then
-                msg_run 'popd >/dev/null' || true
-                return 1
-              fi
+          # Extract dependencies from PKGBUILD
+          if [[ -n "$depends" ]] || [[ -n "$makedepends" ]]; then
+            msg_info "Installing all dependencies..."
+            if ! yay -Sy --asdeps --needed --noanswerdiff --noconfirm "${depends[@]}" "${makedepends[@]}"; then
+              msg_run 'popd >/dev/null' || true
+              return 1
             fi
           fi
           msg_run 'popd >/dev/null' || true
