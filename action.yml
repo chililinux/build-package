@@ -536,7 +536,7 @@ runs:
           [[ $? -ne 0 ]] && die "Erro ao carregar o PKGBUILD."
 
           msg_info "Checking for required PGP keys..."
-          for key in "${validpgpkeys[@]}"
+          for key in "${validpgpkeys[@]}"; {
             if [[ ! -z "$key" ]]; then
               msg_raw "Importing GPG key: $key"
               # Tenta importar a chave de diferentes servidores de chaves
@@ -548,7 +548,7 @@ runs:
                 msg_warning "Failed to import key: $key"
               fi
             fi
-          done
+          }
 
           TAG_NAME="$pkgver-$pkgrel"
           echo "TAG_NAME=$TAG_NAME"  >> $GITHUB_ENV
