@@ -471,12 +471,15 @@ runs:
 
         if [[ -n "${{ inputs.url }}" ]]; then
           msg_raw "Cloning git repository from: ${{ inputs.url }}"
-          #msg_run "git clone ${{ inputs.url }} $SOURCE_PACKAGE_PATH"
           pkgname="${{ inputs.package_name }}"
-          pkg_aur="${pkgname//aur-/aur/}"
-          pkg_dir="${pkgname//aur-/}"
-          msg_run "yay -G ${pkg_aur}"
-          msg_run "mv ${pkg_dir}/ source_repo/"
+          if [[ "${{ inputs.build_env }}" == "aur" ]]; then
+            local pkg_aur="${pkgname//aur-/aur/}"
+            local pkg_dir="${pkgname//aur-/}"
+            msg_run "yay -G ${pkg_aur}"
+            msg_run "mv ${pkg_dir}/ source_repo/"
+          else
+            msg_run "git clone ${{ inputs.url }} $SOURCE_PACKAGE_PATH"
+          fi
           msg_run "cd $SOURCE_PACKAGE_PATH"
           msg_raw "current path: $PWD"
 
