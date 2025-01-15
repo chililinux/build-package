@@ -283,7 +283,7 @@ runs:
 
         echo "REPO_URL=$REPO_URL"             >> $GITHUB_ENV
         #echo "COMMIT_HASH=$COMMIT_HASH"       >> $GITHUB_ENV
-        echo "COMMIT_MESSAGE=$COMMIT_MESSAGE" >> $GITHUB_ENV
+        #echo "COMMIT_MESSAGE=$COMMIT_MESSAGE" >> $GITHUB_ENV
         msg_raw "Last commit hash   : $COMMIT_HASH"
         msg_raw "Last commit message: $COMMIT_MESSAGE"
         replicate '='
