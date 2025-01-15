@@ -471,7 +471,8 @@ runs:
 
         if [[ -n "${{ inputs.url }}" ]]; then
           msg_raw "Cloning git repository from: ${{ inputs.url }}"
-          pkg_aur="${{inputs.url//aur-/aur/}"
+          input="${{ inputs.url }}"
+          pkg_aur="${input.url//aur-/aur/}"
           #msg_run "git clone ${{ inputs.url }} $SOURCE_PACKAGE_PATH"
           msg_run "yay -G ${pkg_aur}"
           msg_run "cd $SOURCE_PACKAGE_PATH"
