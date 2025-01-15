@@ -656,16 +656,19 @@ runs:
         msg_run "ls -la $PWD"
         replicate '-'
 
+        replicate '-'
         if ! install_dependencies; then
           msg_info "depends    : ${depends[@]}"
           msg_info "makedepends: ${makedepends[@]}"
           die "Falha ao instalar dependências com yay"
         fi
+        replicate '-'
 
         msg_run "pushd ${{ env.PKGBUILD_FOLDER }} >/dev/null"
         #make_with_chrootbuild
         #make_with_yay
         make_with_makepkg
+        replicate '-'
 
         if [[ -n "${{ inputs.extra_command }}" ]]; then
           msg_info '#Executa comando extra, se fornecido'
