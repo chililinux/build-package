@@ -473,8 +473,8 @@ runs:
           msg_raw "Cloning git repository from: ${{ inputs.url }}"
           pkgname="${{ inputs.package_name }}"
           if [[ "${{ inputs.build_env }}" == "aur" ]]; then
-            local pkg_aur="${pkgname//aur-/aur/}"
-            local pkg_dir="${pkgname//aur-/}"
+            pkg_aur="${pkgname//aur-/aur/}"
+            pkg_dir="${pkgname//aur-/}"
             msg_run "yay -G ${pkg_aur}"
             msg_run "mv ${pkg_dir}/ source_repo/"
           else
