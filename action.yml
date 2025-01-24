@@ -29,7 +29,7 @@ description: "Builds Arch/Chililinux Packages"
 
 inputs:
   build_env:
-    description: "Build environment (testing, extra, stable, or aur)"
+    description: "Build environment (testing, extra, stable or aur)"
     required: true
     default: "testing"
   source:
@@ -778,7 +778,8 @@ runs:
 
         if [[ "${{ inputs.build_env }}" == "aur" ]]; then
           msg_run 'cd /home/packages'
-          branch="EXTRA"  # Todos os pacotes AUR vão para EXTRA
+          #branch="EXTRA"  # Todos os pacotes AUR vão para EXTRA
+          branch="AUR"
         else
           msg_run 'cd /home/packages'
           msg_info '# Set the branch based on BRANCH_TYPE'
@@ -788,6 +789,9 @@ runs:
               ;;
             "extra")
               branch="EXTRA"
+              ;;
+            "aur")
+              branch="AUR"
               ;;
             *)
               branch="TESTING"
@@ -854,7 +858,11 @@ runs:
             branch="STABLE"
             db_name="chili-stable"
             ;;
-          "aur" | "extra")
+          "aur")
+            branch="AUR"
+            db_name="chili-aur"
+            ;;
+          "extra")
             branch="EXTRA"
             db_name="chili-extra"
             ;;
