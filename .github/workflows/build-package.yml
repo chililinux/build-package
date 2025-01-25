@@ -37,13 +37,21 @@ on:
   workflow_dispatch:
     inputs:
       branch_type:
-        description: "Branch type (testing, extra or stable)"
+        description: "Branch type (testing, extra, stable or aur)"
         required: true
         type: choice
         options:
           - testing
           - extra
           - stable
+          - aur
+      build_env:
+        description: "Build_env (aur ou normal)"
+        required: true
+        type: choice
+        options:
+          - aur
+          - normal
       new_branch:
         description: "Nome do novo branch"
         required: true
@@ -74,6 +82,7 @@ on:
         type: string
 
 env:
+  BUILD_ENV: "${{ github.event.client_payload.build_env || github.event.inputs.build_env }}"
   BRANCH_TYPE: "${{ github.event.client_payload.branch_type || github.event.inputs.branch_type }}"
   NEW_BRANCH: "${{ github.event.client_payload.branch || github.event.inputs.new_branch }}"
   PACKAGE_NAME: "${{ github.event.action }}"
@@ -202,7 +211,7 @@ jobs:
         uses: ./
         with:
           # Parâmetros relacionados ao ambiente de build e tipo de pacote
-          build_env: ${{ env.BRANCH_TYPE }}
+          build_env: ${{ env.BUILD_ENV }}
           branch_type: ${{ env.BRANCH_TYPE }}
           new_branch: ${{ env.NEW_BRANCH }}
           package_name: ${{ env.PACKAGE_NAME }}
