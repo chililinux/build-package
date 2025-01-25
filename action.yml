@@ -637,13 +637,15 @@ runs:
           # Exibe os elementos do array
           for pkg in "${pkgs_created[@]}"; do
             full_pkgname="$pkg"
+            replicate '-'
             msg_raw "pkgname      : $pkgname"
             msg_raw "pkgver       : $pkgver"
             msg_raw "pkgrel       : $pkgrel"
             msg_raw "pkgdesc      : $pkgdesc"
             msg_raw "full_pkgname : $full_pkgname"
             echo "full_pkgname=$full_pkgname" >> $GITHUB_ENV
-            msg_run "cp -f $pkg /home/packages/" || msg_warning 'No package found to move'
+            msg_run "cp -f $full_pkgname /home/packages/" || msg_warning 'No package found to move'
+            replicate '-'
           done
         }
 
