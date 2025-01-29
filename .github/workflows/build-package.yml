@@ -112,6 +112,10 @@ jobs:
         run: date
 
   BuildPackage:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      packages: write
     container:
       image: vcatafesta/build-iso:1.6
       options: --privileged
