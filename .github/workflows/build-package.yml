@@ -111,13 +111,10 @@ jobs:
       - name: Verificar hora
         run: date
 
-      - name: Executar no container
-        container:
-          image: vcatafesta/build-iso:1.6
-          options: --privileged
-          steps:
-            - name: Verificar hora dentro do container
-              run: date
+    BuildPackage:
+      container:
+        image: vcatafesta/build-iso:1.6
+        options: --privileged
 
       - name: Capturar hora de início do workflow
         id: start-time
