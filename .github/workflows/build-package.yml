@@ -96,22 +96,23 @@ env:
   ORGANIZATION_TOKEN: "${{ secrets.ORGANIZATION_TOKEN }}"
 
 jobs:
-  Setup:
+  SetupAndBuildPackage:
     runs-on: ubuntu-latest
     permissions:
       contents: write
       packages: write
     container:
       image: vcatafesta/build-iso:1.6
+      #options: --user root
       options: --privileged
     steps:
-      - name: Instalar fuso horário e definir no host
+     - name: Definir fuso horário
         run: |
-          sudo apt-get update && sudo apt-get install -y tzdata
-          sudo ln -sf /usr/share/zoneinfo/America/Porto_Velho /etc/localtime
-          sudo dpkg-reconfigure -f noninteractive tzdata
+          ln -sf /usr/share/zoneinfo/America/Porto_Velho /etc/localtime
+          hwclock --systohc
+          echo "TZ='America/Porto_Velho'" >> /etc/environment
 
-      - name: Verificar hora no host
+      - name: Verificar hora
         run: date
 
       # Rodando o container após configurar o horário no host
