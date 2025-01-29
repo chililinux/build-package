@@ -113,12 +113,13 @@ jobs:
         run: date
 
       # Rodando o container após configurar o horário no host
-      - name: Subir container e executar comandos
+      - name: Subir container e manter sessão ativa
         run: |
-          docker run --rm --privileged \
+          docker run --privileged -dit \
             -v /etc/localtime:/etc/localtime:ro \
+            --name build-container \
             vcatafesta/build-iso:1.6 \
-            bash -c "date"
+            bash
 
       - name: Capturar hora de início do workflow
         id: start-time
