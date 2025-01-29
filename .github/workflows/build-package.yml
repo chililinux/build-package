@@ -101,7 +101,9 @@ jobs:
     permissions:
       contents: write
       packages: write
-
+    container:
+      image: vcatafesta/build-iso:1.6
+      options: --privileged
     steps:
       - name: Instalar fuso horário e definir no host
         run: |
@@ -113,13 +115,8 @@ jobs:
         run: date
 
       # Rodando o container após configurar o horário no host
-      - name: Subir container e manter sessão ativa
-        run: |
-          docker run --privileged -dit \
-            -v /etc/localtime:/etc/localtime:ro \
-            --name build-container \
-            vcatafesta/build-iso:1.6 \
-            bash
+      - name: Subir container e manter sessão ativa - Checkout código
+        uses: actions/checkout@v4
 
       - name: Capturar hora de início do workflow
         id: start-time
