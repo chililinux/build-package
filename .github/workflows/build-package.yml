@@ -106,7 +106,7 @@ jobs:
       #options: --user root
       options: --privileged
     steps:
-     - name: Definir fuso horário
+      - name: Definir fuso horário
         run: |
           ln -sf /usr/share/zoneinfo/America/Porto_Velho /etc/localtime
           hwclock --systohc
@@ -114,10 +114,6 @@ jobs:
 
       - name: Verificar hora
         run: date
-
-      # Rodando o container após configurar o horário no host
-      - name: Subir container e manter sessão ativa - Checkout código
-        uses: actions/checkout@v4
 
       - name: Capturar hora de início do workflow
         id: start-time
