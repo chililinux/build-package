@@ -101,9 +101,6 @@ jobs:
     permissions:
       contents: write
       packages: write
-    container:
-      image: vcatafesta/build-iso:1.6
-      options: --privileged
     steps:
       - name: Instalar fuso horário e definir
         run: |
@@ -113,6 +110,14 @@ jobs:
 
       - name: Verificar hora
         run: date
+
+      - name: Executar no container
+        container:
+          image: vcatafesta/build-iso:1.6
+          options: --privileged
+          steps:
+            - name: Verificar hora dentro do container
+              run: date
 
       - name: Capturar hora de início do workflow
         id: start-time
