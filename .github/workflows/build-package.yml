@@ -96,7 +96,7 @@ env:
   ORGANIZATION_TOKEN: "${{ secrets.ORGANIZATION_TOKEN }}"
 
 jobs:
-  SetupAndBuildPackage:
+  Setup:
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -111,11 +111,11 @@ jobs:
       - name: Verificar hora
         run: date
 
-    BuildPackage:
-      container:
-        image: vcatafesta/build-iso:1.6
-        options: --privileged
-
+  BuildPackage:
+    container:
+      image: vcatafesta/build-iso:1.6
+      options: --privileged
+    steps:
       - name: Capturar hora de início do workflow
         id: start-time
         run: |
