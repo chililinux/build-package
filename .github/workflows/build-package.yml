@@ -101,25 +101,25 @@ jobs:
     permissions:
       contents: write
       packages: write
+
     steps:
-      - name: Instalar fuso horário e definir
+      - name: Instalar fuso horário e definir no host
         run: |
           apt-get update && apt-get install -y tzdata
           ln -sf /usr/share/zoneinfo/America/Sao_Paulo /etc/localtime
           dpkg-reconfigure -f noninteractive tzdata
 
-      - name: Verificar hora
+      - name: Verificar hora no host
         run: date
 
-  BuildPackage:
-    runs-on: ubuntu-latest
-    permissions:
-      contents: write
-      packages: write
-    container:
-      image: vcatafesta/build-iso:1.6
-      options: --privileged
-    steps:
+      # Rodando o container após configurar o horário no host
+      - name: Subir container e executar comandos
+        run: |
+          docker run --rm --privileged \
+            -v /etc/localtime:/etc/localtime:ro \
+            vcatafesta/build-iso:1.6 \
+            bash -c "date"
+
       - name: Capturar hora de início do workflow
         id: start-time
         run: |
