@@ -108,9 +108,9 @@ jobs:
     steps:
       - name: Definir fuso horário
         run: |
-          ln -sf /usr/share/zoneinfo/America/Porto_Velho /etc/localtime
-          hwclock --systohc
-          echo "TZ='America/Porto_Velho'" >> /etc/environment
+          sudo ln -sf /usr/share/zoneinfo/America/Porto_Velho /etc/localtime
+          sudo hwclock --systohc
+          echo "TZ='America/Porto_Velho'" | sudo tee -a /etc/environment
 
       - name: Verificar hora
         run: date
